@@ -124,7 +124,7 @@ inline float FastRSqrt(float value) {
 	s32 intval = reinterpret<s32, f32>(value);
 	
 	const int MAGIC_NUMBER = 0x5f3759df;
-			
+	
 	float half = value * 0.5f;
 	intval = MAGIC_NUMBER - (intval >> 1);
 	
@@ -181,9 +181,9 @@ inline void XRotatePoint(Vec3f * in, Vec3f * out, float c, float s) {
 	*out = Vec3f(in->x, in->y * c - in->z * s, in->y * s + in->z * c);
 }
 
-Vec3f VRotateX(const Vec3f in, const float angle);
-Vec3f VRotateY(const Vec3f in, const float angle);
-Vec3f VRotateZ(const Vec3f in, const float angle);
+Vec3f VRotateX(Vec3f in, float angle);
+Vec3f VRotateY(Vec3f in, float angle);
+Vec3f VRotateZ(Vec3f in, float angle);
 
 // Rotates counterclockwise zero at (0, 0, 1);
 Vec3f angleToVectorXZ(float angleDegrees);
@@ -234,11 +234,7 @@ inline bool PointInCylinder(const Cylinder & cyl, const Vec3f & pt) {
 		return false;
 	}
 	
-	if(!fartherThan(Vec2f(cyl.origin.x, cyl.origin.z), Vec2f(pt.x, pt.z), cyl.radius)) {
-		return true;
-	}
-	
-	return false;
+	return !fartherThan(Vec2f(cyl.origin.x, cyl.origin.z), Vec2f(pt.x, pt.z), cyl.radius);
 }
 
 inline long PointInUnderCylinder(const Cylinder & cyl, const Vec3f & pt) {

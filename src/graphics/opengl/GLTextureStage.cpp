@@ -19,7 +19,7 @@
 
 #include "graphics/opengl/GLTextureStage.h"
 
-#include "graphics/opengl/GLTexture2D.h"
+#include "graphics/opengl/GLTexture.h"
 #include "graphics/opengl/OpenGLRenderer.h"
 #include "io/log/Logger.h"
 
@@ -55,7 +55,7 @@ void GLTextureStage::setTexture(Texture * texture) {
 	
 	arx_assert(texture != NULL);
 	
-	tex = reinterpret_cast<GLTexture2D *>(texture);
+	tex = reinterpret_cast<GLTexture *>(texture);
 }
 
 void GLTextureStage::resetTexture() {
@@ -231,7 +231,7 @@ void GLTextureStage::apply() {
 			GLTextureStage * stage = renderer->GetTextureStage(i);
 			if(stage->tex == tex && stage->isEnabled()) {
 				apply = false;
-#ifdef ARX_DEBUG
+				#ifdef ARX_DEBUG
 				if(stage->wrapMode != wrapMode || stage->minFilter != minFilter || stage->magFilter != magFilter) {
 					static bool warned = false;
 					if(!warned) {
@@ -239,9 +239,9 @@ void GLTextureStage::apply() {
 						warned = true;
 					}
 				}
-#else
+				#else
 				break;
-#endif
+				#endif
 			}
 		}
 		

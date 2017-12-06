@@ -150,7 +150,7 @@ private:
 	
 };
 
-static Credits g_credits;
+Credits g_credits;
 
 void Credits::setLibraryCredits(const std::string & subsystem,
                                 const std::string & credits) {
@@ -361,7 +361,7 @@ void Credits::addLine(std::string & phrase, float & drawpos, int sourceLineNumbe
 					}
 				}
 				if(infomations.sText[p] >= '0' && infomations.sText[p] < '9') {
-					if(infomations.sText.find_first_not_of(".", p) == std::string::npos) {
+					if(infomations.sText.find_first_not_of('.', p) == std::string::npos) {
 						continue;
 					}
 					if(infomations.sText.find_first_not_of("0123456789.", p) != std::string::npos) {
@@ -456,8 +456,8 @@ void Credits::render() {
 	if(!init()) {
 		LogError << "Could not initialize credits";
 		reset();
-		ARXmenu.currentmode = AMCM_MAIN;
-		MenuFader_start(true, false, -1);
+		ARXmenu.requestMode(Mode_MainMenu);
+		MenuFader_start(Fade_Out, -1);
 	}
 	
 	// Draw the background
@@ -549,16 +549,16 @@ void Credits::render() {
 			break; //it's useless to continue because next phrase will not be inside the viewport
 	}
 	
-	if(m_firstVisibleLine >= m_lines.size() && iFadeAction != AMCM_MAIN) {
+	if(m_firstVisibleLine >= m_lines.size() && iFadeAction != Mode_MainMenu) {
 		
-		MenuFader_start(true, true, AMCM_MAIN);
-		ARX_MENU_LaunchAmb(AMB_MENU);
+		MenuFader_start(Fade_In, Mode_MainMenu);
+		ARX_SOUND_PlayMenuAmbiance(AMB_MENU);
 	}
 
-	if(MenuFader_process(bFadeInOut) && iFadeAction == AMCM_MAIN) {
+	if(MenuFader_process() && iFadeAction == Mode_MainMenu) {
 		reset();
-		ARXmenu.currentmode = AMCM_MAIN;
-		MenuFader_start(true, false, -1);
+		ARXmenu.requestMode(Mode_MainMenu);
+		MenuFader_start(Fade_Out, -1);
 	}
 	
 }

@@ -67,7 +67,6 @@ ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
 #include "util/Unicode.h"
 
 TextManager * pTextManage = NULL;
-TextManager * pTextManageFlyingOver = NULL;
 
 Font * hFontInBook = NULL;
 Font * hFontMainMenu = NULL;
@@ -93,7 +92,7 @@ static void ARX_UNICODE_FormattingInRect(Font * font, const std::string & text,
 	} else {
 		maxLineWidth = rect.width();
 	}
-	arx_assert(maxLineWidth > 0);
+	arx_assert(maxLineWidth >= 0);
 	int penY = rect.top;
 	
 	if(textHeight) {
@@ -231,16 +230,9 @@ void UNICODE_ARXDrawTextCenteredScroll(Font* font, float x, float y, float x2, c
 	Rect rRect(_x, _y, w, Rect::Limits::max());
 	
 	if(pTextManage) {
-		pTextManage->AddText(font,
-							 str,
-							 rRect,
-							 col,
-							 iTimeOut,
-							 iTimeScroll,
-							 fSpeed,
-							 iNbLigne
-							);
+		pTextManage->AddText(font, str, rRect, col, iTimeOut, iTimeScroll, fSpeed, iNbLigne);
 	}
+	
 }
 
 static Font * createFont(const res::path & fontFace,
@@ -320,8 +312,6 @@ bool ARX_Text_Init() {
 	
 	delete pTextManage;
 	pTextManage = new TextManager();
-	delete pTextManageFlyingOver;
-	pTextManageFlyingOver = new TextManager();
 	
 	FontCache::initialize();
 	
@@ -372,13 +362,10 @@ bool ARX_Text_Init() {
 	}
 	
 	LogInfo << "Loaded font " << file << " with sizes " << hFontMainMenu->getSize()
-			<< ", " << hFontMenu->getSize()
-			<< ", " << hFontControls->getSize()
-			<< ", " << hFontCredits->getSize()
-			<< ", " << hFontInGame->getSize()
-			<< ", " << hFontInGameNote->getSize()
-			<< ", " << hFontInBook->getSize()
-			<< ", " << hFontDebug->getSize();
+	        << ", " << hFontMenu->getSize() << ", " << hFontControls->getSize()
+	        << ", " << hFontCredits->getSize() << ", " << hFontInGame->getSize()
+	        << ", " << hFontInGameNote->getSize() << ", " << hFontInBook->getSize()
+	        << ", " << hFontDebug->getSize();
 	
 	return true;
 }
@@ -389,9 +376,6 @@ void ARX_Text_Close() {
 	
 	delete pTextManage;
 	pTextManage = NULL;
-	
-	delete pTextManageFlyingOver;
-	pTextManageFlyingOver = NULL;
 	
 	FontCache::releaseFont(hFontInBook);
 	hFontInBook = NULL;

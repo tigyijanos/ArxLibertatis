@@ -33,7 +33,6 @@
 CheckboxWidget::CheckboxWidget(TextWidget * label)
 	: Widget()
 {
-	pRef = this; // TODO remove this
 	m_id = BUTTON_INVALID; // TODO remove this
 	
 	arx_assert(label);
@@ -112,12 +111,8 @@ void CheckboxWidget::Render() {
 	m_label->Render();
 }
 
-extern MenuCursor * pMenuCursor;
-
 void CheckboxWidget::RenderMouseOver() {
-
-	pMenuCursor->SetMouseOver();
-
+	
 	renderCommon();
 	
 	m_label->RenderMouseOver();

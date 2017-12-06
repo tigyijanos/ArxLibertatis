@@ -71,10 +71,10 @@ ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
 
 namespace ARX_ANONYMOUS_NAMESPACE {
 
-static const u32 AMBIANCE_FILE_SIGNATURE = 0x424d4147; //'GAMB'
-static const u32 AMBIANCE_FILE_VERSION_1002 = 0x01000002;
-static const u32 AMBIANCE_FILE_VERSION_1003 = 0x01000003;
-static const u32 AMBIANCE_FILE_VERSION = AMBIANCE_FILE_VERSION_1003;
+const u32 AMBIANCE_FILE_SIGNATURE = 0x424d4147; //'GAMB'
+const u32 AMBIANCE_FILE_VERSION_1002 = 0x01000002;
+const u32 AMBIANCE_FILE_VERSION_1003 = 0x01000003;
+const u32 AMBIANCE_FILE_VERSION = AMBIANCE_FILE_VERSION_1003;
 
 struct KeySetting {
 	
@@ -556,7 +556,7 @@ aalError Ambiance::Track::load(PakFileHandle * file, u32 version) {
 	u32 iflags;
 	u32 key_c;
 	if(!file->read(&iflags, 4) || !file->read(&key_c, 4)) {
-			return AAL_ERROR_FILEIO;
+		return AAL_ERROR_FILEIO;
 	}
 	
 	flags = Ambiance::Track::TrackFlags::load(iflags); // TODO save/load flags

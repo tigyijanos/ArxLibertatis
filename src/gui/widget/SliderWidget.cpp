@@ -53,8 +53,6 @@ SliderWidget::SliderWidget(const Vec2f & unscaled)
 	m_rect.bottom = pos.y + std::max(pLeftButton->m_rect.height(), pRightButton->m_rect.height());
 	
 	pRightButton->Move(Vec2f(pLeftButton->m_rect.width() + 10 * std::max(pTex1->m_size.x, pTex2->m_size.x), 0));
-
-	pRef = this;
 }
 
 SliderWidget::~SliderWidget() {
@@ -133,10 +131,12 @@ void SliderWidget::Update() {
 }
 
 void SliderWidget::Render() {
-
-	pLeftButton->Render();
-	pRightButton->Render();
-
+	
+	if(bCheck) {
+		pLeftButton->Render();
+		pRightButton->Render();
+	}
+	
 	Vec2f pos(m_rect.left + pLeftButton->m_rect.width(), m_rect.top);
 	
 	UseRenderState state(render2D().blendAdditive());
@@ -145,19 +145,17 @@ void SliderWidget::Render() {
 		TextureContainer * pTex = (i < m_value) ? pTex1 : pTex2;
 		Rectf rect = Rectf(pos, RATIO_X(pTex->m_size.x), RATIO_Y(pTex->m_size.y));
 		
-		EERIEDrawBitmap(rect, 0, pTex, Color::white);
+		Color color = (bCheck) ? Color::white : Color(63, 63, 63, 255);
+		
+		EERIEDrawBitmap(rect, 0, pTex, color);
 		
 		pos.x += rect.width();
 	}
 	
 }
 
-extern MenuCursor * pMenuCursor;
-
 void SliderWidget::RenderMouseOver() {
-
-	pMenuCursor->SetMouseOver();
-
+	
 	const Vec2f cursor = Vec2f(GInput->getMousePosition());
 	
 	UseRenderState state(render2D().blendAdditive());

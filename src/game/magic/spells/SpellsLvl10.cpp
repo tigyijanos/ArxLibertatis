@@ -202,11 +202,8 @@ bool ControlTargetSpell::CanLaunch()
 			tcount++;
 		}
 	}
-	if(tcount == 0) {
-		return false;
-	}
 	
-	return true;
+	return (tcount != 0);
 }
 
 void ControlTargetSpell::Launch()
@@ -441,8 +438,6 @@ void TeleportSpell::Launch() {
 void TeleportSpell::End() {
 	ARX_SOUND_PlaySFX(SND_MAGIC_FIZZLE, &m_caster_pos);
 }
-
-extern Vec3f lastteleport;
 
 void TeleportSpell::Update() {
 	

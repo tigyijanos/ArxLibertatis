@@ -31,14 +31,16 @@ class Font;
 class TextWidget: public Widget {
 	
 public:
+	
 	std::string m_text;
 	Font * m_font;
 	Color lColor;
 	Color lOldColor;
 	Color lColorHighlight;
-	bool	bSelected;
+	bool bSelected;
 	
-	boost::function<void(TextWidget *)> clicked;	// NOLINT
+	boost::function<void(TextWidget *)> clicked; // NOLINT
+	boost::function<void(TextWidget *)> doubleClicked; // NOLINT
 	
 	// TODO followind fields only used for keybinds
 	bool m_isKeybind;
@@ -46,7 +48,8 @@ public:
 	int m_keybindIndex;
 	
 public:
-	TextWidget(MenuButton id, Font * font, const std::string & text, Vec2f pos = Vec2f_ZERO);
+	
+	TextWidget(Font * font, const std::string & text, Vec2f pos = Vec2f_ZERO);
 	virtual ~TextWidget();
 	
 	void setColor(Color color) { lColor = color; }
@@ -57,7 +60,7 @@ public:
 	void SetText(const std::string & _pText);
 	void RenderMouseOver();
 	
-	bool OnMouseDoubleClick();
+	void OnMouseDoubleClick();
 	
 	virtual WidgetType type() const {
 		return WidgetType_Text;

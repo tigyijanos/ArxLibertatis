@@ -323,7 +323,7 @@ static ObjSelection GetCutSelection(Entity * io, DismembermentFlag flag) {
 	{
 		typedef std::vector<EERIE_SELECTIONS>::iterator iterator; // Convenience
 		for(iterator iter = io->obj->selections.begin(); iter != io->obj->selections.end(); ++iter) {
-			if(iter->selected.size() > 0 && iter->name == tx) {
+			if(!iter->selected.empty() && iter->name == tx) {
 				return ObjSelection(iter - io->obj->selections.begin());
 			}
 		}
@@ -365,30 +365,30 @@ static bool IsAlreadyCut(Entity * io, DismembermentFlag fl) {
 
 static bool ARX_NPC_ApplyCuts(Entity * io) {
 	
-	if(!io || !(io->ioflags & IO_NPC))
+	if(!io || !(io->ioflags & IO_NPC)) {
 		return false;
-
-	if(io->_npcdata->cuts == 0)
-		return false;	// No cuts
-
+	}
+	
+	if(io->_npcdata->cuts == 0) {
+		return false; // No cuts
+	}
+	
 	ReComputeCutFlags(io);
+	
 	long goretex = -1;
-
 	for(size_t i = 0; i < io->obj->texturecontainer.size(); i++) {
-		if (io->obj->texturecontainer[i]
-		        &&	(boost::contains(io->obj->texturecontainer[i]->m_texName.string(), "gore")))
-		{
+		if(io->obj->texturecontainer[i]
+		   && boost::contains(io->obj->texturecontainer[i]->m_texName.string(), "gore")) {
 			goretex = i;
 			break;
 		}
 	}
-
-	bool hid = false;
-
+	
 	for(size_t nn = 0; nn < io->obj->facelist.size(); nn++) {
 		io->obj->facelist[nn].facetype &= ~POLY_HIDE;
 	}
-
+	
+	bool hid = false;
 	for(long jj = 0; jj < 6; jj++) {
 		DismembermentFlag flg = DismembermentFlag(1 << jj);
 		ObjSelection numsel = GetCutSelection(io, flg);
@@ -442,9 +442,9 @@ void ARX_NPC_TryToCutSomething(Entity * target, const Vec3f * pos)
 	for(size_t i = 0; i < target->obj->selections.size(); i++) {
 		ObjSelection sel = ObjSelection(i);
 		
-		if(target->obj->selections[i].selected.size() > 0
-		   && boost::contains(target->obj->selections[i].name, "cut_")
-		) {
+		if(!target->obj->selections[i].selected.empty()
+		   && boost::contains(target->obj->selections[i].name, "cut_")) {
+			
 			DismembermentFlag fll = GetCutFlag(target->obj->selections[i].name);
 
 			if(IsAlreadyCut(target, fll))

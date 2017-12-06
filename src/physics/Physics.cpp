@@ -96,16 +96,18 @@ void EERIE_PHYSICS_BOX_Create(EERIE_3DOBJ * obj)
 	pbox->vert[14].pos = pbox->vert[0].pos;
 	pbox->vert[14].pos.y = cubmax.y;
 	
-	for(size_t k = 1; k < pbox->vert.size() - 2; k++)
-	{
+	for(size_t k = 1; k < pbox->vert.size() - 2; k++) {
 		pbox->vert[k].pos.x = pbox->vert[0].pos.x;
 		pbox->vert[k].pos.z = pbox->vert[0].pos.z;
-
-		if (k < 5)		pbox->vert[k].pos.y = cubmin.y;
-		else if (k < 9)	pbox->vert[k].pos.y = pbox->vert[0].pos.y;
-		else			pbox->vert[k].pos.y = cubmax.y;
+		if(k < 5) {
+			pbox->vert[k].pos.y = cubmin.y;
+		} else if(k < 9) {
+			pbox->vert[k].pos.y = pbox->vert[0].pos.y;
+		} else {
+			pbox->vert[k].pos.y = cubmax.y;
+		}
 	}
-
+	
 	float diff = cubmax.y - cubmin.y;
 	
 	if(diff < 12.f) {
@@ -113,16 +115,18 @@ void EERIE_PHYSICS_BOX_Create(EERIE_3DOBJ * obj)
 		cubmax.y += 8.f;
 		cubmin.y -= 8.f;
 		
-		for(size_t k = 1; k < pbox->vert.size() - 2; k++)
-		{
+		for(size_t k = 1; k < pbox->vert.size() - 2; k++) {
 			pbox->vert[k].pos.x = pbox->vert[0].pos.x;
 			pbox->vert[k].pos.z = pbox->vert[0].pos.z;
-
-			if (k < 5)		pbox->vert[k].pos.y = cubmin.y;
-			else if (k < 9)	pbox->vert[k].pos.y = pbox->vert[0].pos.y;
-			else			pbox->vert[k].pos.y = cubmax.y;
+			if(k < 5) {
+				pbox->vert[k].pos.y = cubmin.y;
+			} else if(k < 9) {
+				pbox->vert[k].pos.y = pbox->vert[0].pos.y;
+			} else {
+				pbox->vert[k].pos.y = cubmax.y;
+			}
 		}
-
+		
 		pbox->vert[14].pos.y = cubmax.y;
 		pbox->vert[13].pos.y = cubmin.y;
 		float RATI = diff * ( 1.0f / 8 );
@@ -532,33 +536,25 @@ static bool IsObjectVertexCollidingTriangle(const PHYSICS_BOX_DATA & pbox, Vec3f
 }
 
 static bool IsObjectVertexCollidingPoly(const PHYSICS_BOX_DATA & pbox, const EERIEPOLY & ep) {
-
+	
 	Vec3f pol[3];
 	pol[0] = ep.v[0].p;
 	pol[1] = ep.v[1].p;
 	pol[2] = ep.v[2].p;
-
+	
 	if(ep.type & POLY_QUAD) {
-
+			
 		if(IsObjectVertexCollidingTriangle(pbox, pol)) {
 			return true;
 		}
-
+		
 		pol[1] = ep.v[2].p;
 		pol[2] = ep.v[3].p;
-
-		if(IsObjectVertexCollidingTriangle(pbox, pol)) {
-			return true;
-		}
-
-		return false;
+		
+		return IsObjectVertexCollidingTriangle(pbox, pol);
 	}
-
-	if(IsObjectVertexCollidingTriangle(pbox, pol)) {
-		return true;
-	}
-
-	return false;
+	
+	return IsObjectVertexCollidingTriangle(pbox, pol);
 }
 
 static Material polyTypeToCollisionMaterial(const EERIEPOLY & ep) {

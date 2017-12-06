@@ -57,34 +57,32 @@ ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
 
 class Entity;
 
-struct EERIE_FRAME
-{
-	long		num_frame;
-	bool  stepSound;
-	bool  f_translate;
-	bool  f_rotate;
+struct EERIE_FRAME {
+	long num_frame;
+	bool stepSound;
+	bool f_translate;
+	bool f_rotate;
 	AnimationDuration time;
-	Vec3f	translate;
-	glm::quat	quat;
-	audio::SampleId	sample;
+	Vec3f translate;
+	glm::quat quat;
+	audio::SampleId sample;
 };
 
-struct EERIE_GROUP
-{
-	int		key;
-	Vec3f	translate;
-	glm::quat	quat;
-	Vec3f	zoom;
+struct EERIE_GROUP {
+	int key;
+	Vec3f translate;
+	glm::quat quat;
+	Vec3f zoom;
 };
 
-struct EERIE_ANIM
-{
+struct EERIE_ANIM {
+	
 	AnimationDuration anim_time;
-	long		nb_groups;
-	long		nb_key_frames;
-	EERIE_FRAME *	frames;
-	EERIE_GROUP  *  groups;
-	unsigned char *	voidgroups;
+	long nb_groups;
+	long nb_key_frames;
+	EERIE_FRAME * frames;
+	EERIE_GROUP * groups;
+	unsigned char * voidgroups;
 	
 	EERIE_ANIM()
 		: anim_time(0)
@@ -94,34 +92,36 @@ struct EERIE_ANIM
 		, groups(NULL)
 		, voidgroups(NULL)
 	{ }
+	
 };
 
 struct ANIM_HANDLE {
-
+	
 	ANIM_HANDLE();
-
+	
 	res::path path; // empty path means an unallocated slot
 	EERIE_ANIM ** anims;
 	short alt_nb;
 	long locks;
+	
 };
 
 // Animation playing flags
 enum AnimUseTypeFlag {
-	EA_LOOP       = (1<<0),	// Must be looped at end (indefinitely...)
-	EA_REVERSE    = (1<<1),	// Is played reversed (from end to start)
-	EA_PAUSED     = (1<<2),	// Is paused
-	EA_ANIMEND    = (1<<3),	// Has just finished
-	EA_STATICANIM = (1<<4),	// Is a static Anim (no movement offset returned).
-	EA_STOPEND    = (1<<5),	// Must Be Stopped at end.
-	EA_FORCEPLAY  = (1<<6),	// User controlled... MUST be played...
-	EA_EXCONTROL  = (1<<7)	// ctime externally set, no update.
+	EA_LOOP       = (1<<0), // Must be looped at end (indefinitely...)
+	EA_REVERSE    = (1<<1), // Is played reversed (from end to start)
+	EA_PAUSED     = (1<<2), // Is paused
+	EA_ANIMEND    = (1<<3), // Has just finished
+	EA_STATICANIM = (1<<4), // Is a static Anim (no movement offset returned).
+	EA_STOPEND    = (1<<5), // Must Be Stopped at end.
+	EA_FORCEPLAY  = (1<<6), // User controlled... MUST be played...
+	EA_EXCONTROL  = (1<<7) // ctime externally set, no update.
 };
 DECLARE_FLAGS(AnimUseTypeFlag, AnimUseType)
 DECLARE_FLAGS_OPERATORS(AnimUseType)
 
 struct AnimLayer {
-
+	
 	AnimLayer()
 		: cur_anim(NULL)
 		, altidx_cur(0)
@@ -131,7 +131,7 @@ struct AnimLayer {
 		, currentInterpolation(0.f)
 		, currentFrame(0)
 	{}
-
+	
 	ANIM_HANDLE * cur_anim;
 	short altidx_cur; // idx to alternate anims...
 	AnimationDuration ctime;
@@ -139,6 +139,7 @@ struct AnimLayer {
 	long lastframe;
 	float currentInterpolation;
 	long currentFrame;
+	
 };
 
 /*!
@@ -183,7 +184,7 @@ void setAnimation(Entity * entity, ANIM_HANDLE * animation,
  */
 void stopAnimation(Entity * entity, size_t layer = 0);
 
-short ANIM_GetAltIdx(ANIM_HANDLE * ah,long old);
+short ANIM_GetAltIdx(ANIM_HANDLE * ah, long old);
 void ANIM_Set(AnimLayer & layer, ANIM_HANDLE * anim);
 
 Vec3f GetAnimTotalTranslate(ANIM_HANDLE * eanim, long alt_idx);
@@ -198,11 +199,11 @@ void PrepareAnim(AnimLayer & layer, AnimationDuration time, Entity *io);
 void ResetAnim(AnimLayer & layer);
 
 void AcquireLastAnim(Entity * io);
-void FinishAnim(Entity * io,ANIM_HANDLE * eanim);
+void FinishAnim(Entity * io, ANIM_HANDLE * eanim);
 
 void ARX_SOUND_PushAnimSamples();
 void ARX_SOUND_PopAnimSamples();
 
-void ReleaseAnimFromIO(Entity * io,long num);
+void ReleaseAnimFromIO(Entity * io, long num);
 
 #endif // ARX_ANIMATION_ANIMATION_H

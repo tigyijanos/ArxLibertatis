@@ -116,7 +116,7 @@ DECLARE_FLAGS_OPERATORS(ItemType)
 enum HaloFlag {
 	HALO_ACTIVE   = (1<<0),
 	HALO_NEGATIVE = (1<<1),
-	HALO_DYNLIGHT = (1<<2)
+	HALO_DYNLIGHT = (1<<2)  //!< Unused
 };
 DECLARE_FLAGS(HaloFlag, HaloFlags)
 DECLARE_FLAGS_OPERATORS(HaloFlags)
@@ -253,7 +253,7 @@ public:
 	Vec3f forcedmove;
 	
 	Anglef angle; // IO angle
-	IO_PHYSICS physics;	// Movement Collision Data
+	IO_PHYSICS physics; // Movement Collision Data
 	short room;
 	bool requestRoomUpdate;
 	float original_height;

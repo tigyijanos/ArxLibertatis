@@ -140,20 +140,18 @@ extern float SLID_VALUE;
 
 float lSLID_VALUE = 0;
 
-extern bool BLOCK_PLAYER_CONTROLS;
-
 extern bool WILLRETURNTOFREELOOK;
 
 extern bool SHOW_INGAME_MINIMAP;
 
 //-----------------------------------------------------------------------------
 
-E_ARX_STATE_MOUSE	eMouseState;
+E_ARX_STATE_MOUSE eMouseState;
 Vec2s MemoMouse;
 
-INVENTORY_DATA *	TSecondaryInventory;
+INVENTORY_DATA * TSecondaryInventory;
 Entity * FlyingOverIO=NULL;
-Entity *	STARTED_ACTION_ON_IO=NULL;
+Entity * STARTED_ACTION_ON_IO=NULL;
 
 INTERFACE_TC g_bookResouces = INTERFACE_TC();
 
@@ -161,19 +159,18 @@ Note openNote;
 
 extern PlatformInstant SLID_START;
 
-Vec2f				BOOKDEC = Vec2f(0.f, 0.f);
+Vec2f BOOKDEC = Vec2f(0.f, 0.f);
 
-bool				PLAYER_MOUSELOOK_ON = false;
-bool				TRUE_PLAYER_MOUSELOOK_ON = false;
+bool PLAYER_MOUSELOOK_ON = false;
+bool TRUE_PLAYER_MOUSELOOK_ON = false;
 static bool MEMO_PLAYER_MOUSELOOK_ON = false;
 
-bool				COMBINEGOLD = false;
+bool COMBINEGOLD = false;
 
-bool				DRAGGING = false;
-bool				MAGICMODE = false;
-long				SpecialCursor=0;
+bool DRAGGING = false;
+bool MAGICMODE = false;
 
-GameInstant COMBAT_MODE_ON_START_TIME = 0;
+static PlatformInstant COMBAT_MODE_ON_START_TIME = 0;
 static long SPECIAL_DRAW_WEAPON = 0;
 bool bGCroucheToggle=false;
 
@@ -337,11 +334,9 @@ void INTERFACE_TC::init() {
 
 
 //-----------------------------------------------------------------------------
-void ARX_INTERFACE_HALO_Render(Color3f color,
-							   long _lHaloType,
-							   TextureContainer * haloTexture,
-							   Vec2f pos, Vec2f ratio)
-{
+void ARX_INTERFACE_HALO_Render(Color3f color, long _lHaloType, TextureContainer * haloTexture,
+                               Vec2f pos, Vec2f ratio) {
+	
 	float wave = timeWaveSin(g_gameTime.now(), GameDurationMsf(628.319f));
 	
 	float power = 0.9f;
@@ -413,7 +408,7 @@ void InventoryOpenClose(unsigned long t) {
 	if(((player.Interface & INTER_INVENTORYALL) || TRUE_PLAYER_MOUSELOOK_ON) && (player.Interface & INTER_NOTE))
 		ARX_INTERFACE_NoteClose();
 
-	if(!g_playerInventoryHud.isClosing() && config.input.autoReadyWeapon == false)
+	if(!g_playerInventoryHud.isClosing() && config.input.autoReadyWeapon != AlwaysAutoReadyWeapon)
 		TRUE_PLAYER_MOUSELOOK_ON = false;
 }
 
@@ -537,10 +532,11 @@ static void ReleaseInfosCombine() {
 static char * findParam(char * pcToken, const char * param) {
 	
 	char* pStartString = 0;
-
-	if(strstr(pcToken,"^$param1"))
+	
+	if(strstr(pcToken, "^$param1")) {
 		pStartString = strstr(pcToken, param);
-
+	}
+	
 	return pStartString;
 }
 
@@ -584,7 +580,7 @@ static void GetInfosCombineWithIO_Script(Entity * combine, Entity * _pWithIO, co
 						tTxtCombineDest[pEndString - pStartString] = 0;
 						
 						if(tTxtCombineDest == combine->className()) {
-							//same class
+							// same class
 							bCanCombine = true;
 						}
 					}
@@ -604,8 +600,8 @@ static void GetInfosCombineWithIO_Script(Entity * combine, Entity * _pWithIO, co
 							tTxtCombineDest[pEndString - pStartString] = 0;
 							
 							if(tTxtCombineDest == tcIndent) {
-								//same class
-								bCanCombine=true;
+								// same class
+								bCanCombine = true;
 							}
 						}
 					}
@@ -628,7 +624,7 @@ static void GetInfosCombineWithIO_Script(Entity * combine, Entity * _pWithIO, co
 								memcpy(tTxtCombineDest, pStartString, pEndString - pStartString);
 								tTxtCombineDest[pEndString - pStartString] = 0;
 								if(combine->groups.find(tTxtCombineDest) != combine->groups.end()) {
-									//same class
+									// same class
 									bCanCombine = true;
 								}
 							}
@@ -699,6 +695,62 @@ static void GetInfosCombine() {
 	}
 }
 
+static bool isPlayerLookingAtEnemy() {
+	
+	if(FlyingOverIO) {
+		// Looking directly at an enemy or ally
+		return isEnemy(FlyingOverIO);
+	}
+	
+	const float maxLookAtDistance = 500.f;
+	const float maxFriendlyDistance = 300.f;
+	const float maxLookAtAngle = glm::radians(45.f);
+	const float maxNearByDistance = 300.f;
+	
+	float closestNPCInFrontDistance = std::numeric_limits<float>::infinity();
+	Entity * closestNPCInFront = NULL;
+	bool isEnemyNearBy = false;
+	
+	for(size_t i = 1; i < entities.size(); i++) {
+		const EntityHandle handle = EntityHandle(i);
+		Entity * entity = entities[handle];
+		
+		if(!entity || !(entity->ioflags & IO_NPC)) {
+			continue;
+		}
+		
+		float distance = glm::distance(entity->pos, entities.player()->pos);
+		if(distance > maxLookAtDistance) {
+			continue;
+		}
+		
+		// Determine the direction of the entity from the player
+		Vec3f dir = glm::normalize(Vec3f(entity->pos.x, 0.f, entity->pos.z)
+		                           - Vec3f(player.pos.x, 0.f, player.pos.z));
+		float cangle = glm::dot(dir, angleToVectorXZ(player.angle.getYaw()));
+		
+		if(cangle > glm::cos(maxLookAtAngle)) {
+			if(distance < closestNPCInFrontDistance) {
+				closestNPCInFrontDistance = distance;
+				closestNPCInFront = entity;
+			}
+		} else if(distance <= maxNearByDistance && isEnemy(entity)) {
+			isEnemyNearBy = true;
+		}
+		
+	}
+	
+	if(closestNPCInFront) {
+		if(isEnemy(closestNPCInFront) || closestNPCInFrontDistance < maxFriendlyDistance) {
+			// Enemy or ally in front
+			return isEnemy(closestNPCInFront);
+		}
+	}
+	
+	// No ally in front - enemy near by?
+	return isEnemyNearBy;
+}
+
 //-----------------------------------------------------------------------------
 // Switches from/to combat Mode i=-1 for switching from actual configuration
 // 2 to force Draw Weapon
@@ -716,8 +768,8 @@ void ARX_INTERFACE_setCombatMode(ARX_INTERFACE_COMBAT_MODE i) {
 		return;
 
 	if((player.Interface & INTER_COMBATMODE)) {
-		player.Interface&=~INTER_COMBATMODE;
-		player.Interface&=~INTER_NO_STRIKE;
+		player.Interface &= ~INTER_COMBATMODE;
+		player.Interface &= ~INTER_NO_STRIKE;
 
 		ARX_EQUIPMENT_LaunchPlayerUnReadyWeapon();
 		WeaponType weapontype = ARX_EQUIPMENT_GetPlayerWeaponType();
@@ -768,14 +820,14 @@ void ArxGame::managePlayerControls() {
 		if(t) {
 			if(t->ioflags & IO_NPC) {
 				if(t->script.data) {
-					if(t->_npcdata->lifePool.current>0.f) {
-						SendIOScriptEvent(t,SM_CHAT);
+					if(t->_npcdata->lifePool.current > 0.f) {
+						SendIOScriptEvent(t, SM_CHAT);
 						DRAGGING = false;
 					} else {
 						if(t->inventory) {
 							if(player.Interface & INTER_STEAL)
 								if(ioSteal && t != ioSteal) {
-									SendIOScriptEvent(ioSteal, SM_STEAL,"off");
+									SendIOScriptEvent(ioSteal, SM_STEAL, "off");
 									player.Interface &= ~INTER_STEAL;
 								}
 							
@@ -796,7 +848,7 @@ void ArxGame::managePlayerControls() {
 				if(t->inventory) {
 					if(player.Interface & INTER_STEAL) {
 						if(ioSteal && t != ioSteal) {
-							SendIOScriptEvent(ioSteal, SM_STEAL,"off");
+							SendIOScriptEvent(ioSteal, SM_STEAL, "off");
 							player.Interface &= ~INTER_STEAL;
 						}
 					}
@@ -808,7 +860,7 @@ void ArxGame::managePlayerControls() {
 						lOldTruePlayerMouseLook=!TRUE_PLAYER_MOUSELOOK_ON;
 					}
 				} else if (t->script.data) {
-					SendIOScriptEvent(t,SM_ACTION);
+					SendIOScriptEvent(t, SM_ACTION);
 				}
 				DRAGGING = false;
 			}
@@ -872,8 +924,8 @@ void ArxGame::managePlayerControls() {
 			Cylinder test = phys.cyl;
 			
 			bool npc = AttemptValidCylinderPos(test, NULL, CFLAG_JUST_TEST | CFLAG_NPC);
-			float val=CheckAnythingInCylinder(phys.cyl,entities.player(),CFLAG_NO_NPC_COLLIDE | CFLAG_JUST_TEST);
-
+			float val = CheckAnythingInCylinder(phys.cyl, entities.player(), CFLAG_NO_NPC_COLLIDE | CFLAG_JUST_TEST);
+			
 			if(val > -40.f) {
 				if(val <= 70.f) {
 					eyeball.pos.y += val-70.f;
@@ -1028,7 +1080,7 @@ void ArxGame::managePlayerControls() {
 	
 	// MAGIC
 	if(GInput->actionPressed(CONTROLS_CUST_MAGICMODE)) {
-		if(!(player.m_currentMovement & PLAYER_CROUCH) && !BLOCK_PLAYER_CONTROLS && ARXmenu.currentmode == AMCM_OFF) {
+		if(!(player.m_currentMovement & PLAYER_CROUCH) && !BLOCK_PLAYER_CONTROLS && ARXmenu.mode() == Mode_InGame) {
 			if(!ARX_SOUND_IsPlaying(SND_MAGIC_AMBIENT))
 				ARX_SOUND_PlaySFX(SND_MAGIC_AMBIENT, NULL, 1.0F, ARX_SOUND_PLAY_LOOPED);
 		}
@@ -1158,17 +1210,16 @@ void ArxGame::managePlayerControls() {
 					entities.player()->animlayer[1].cur_anim == entities.player()->anims[ANIM_WAIT])
 				{
 					lChangeWeapon--;
-
 					if(pIOChangeWeapon) {
-						SendIOScriptEvent(pIOChangeWeapon,SM_INVENTORYUSE,"");
-						pIOChangeWeapon=NULL;
+						SendIOScriptEvent(pIOChangeWeapon, SM_INVENTORYUSE, "");
+						pIOChangeWeapon = NULL;
 					}
 				} else {
-					bGo=false;
+					bGo = false;
 				}
 			}
 		}
-
+		
 		if(bGo) {
 			if(player.Interface & INTER_COMBATMODE) {
 				ARX_INTERFACE_setCombatMode(COMBAT_MODE_OFF);
@@ -1246,40 +1297,38 @@ void ArxGame::managePlayerControls() {
 	if(   eeMousePressed1()
 	   && !(player.Interface & INTER_COMBATMODE)
 	   && !g_cursorOverBook
-	   && !SpecialCursor
+	   && !cursorIsSpecial()
 	   && PLAYER_MOUSELOOK_ON
 	   && !DRAGINTER
 	   && !InInventoryPos(DANAEMouse)
-	   && config.input.autoReadyWeapon
-	) {
+	   && (config.input.autoReadyWeapon == AlwaysAutoReadyWeapon
+	       || (config.input.autoReadyWeapon == AutoReadyWeaponNearEnemies && isPlayerLookingAtEnemy()))) {
 		if(eeMouseDown1()) {
-			// TODO use os time
-			COMBAT_MODE_ON_START_TIME = g_gameTime.now();
+			COMBAT_MODE_ON_START_TIME = g_platformTime.frameStart();
 		} else {
-			if(g_gameTime.now() - COMBAT_MODE_ON_START_TIME > GameDurationMs(10)) {
+			if(g_platformTime.frameStart() - COMBAT_MODE_ON_START_TIME > PlatformDurationMs(10)) {
 				ARX_INTERFACE_setCombatMode(COMBAT_MODE_ON);
 			}
 		}
 	}
-
+	
 	if(lOldTruePlayerMouseLook != TRUE_PLAYER_MOUSELOOK_ON) {
-		bInverseInventory=false;
-
+		bInverseInventory = false;
 		if(TRUE_PLAYER_MOUSELOOK_ON) {
 			if(!CSEND) {
-				CSEND=1;
-				SendIOScriptEvent(entities.player(),SM_EXPLORATIONMODE);
+				CSEND = 1;
+				SendIOScriptEvent(entities.player(), SM_EXPLORATIONMODE);
 			}
 		}
 	} else {
 		if(CSEND) {
-			CSEND=0;
-			SendIOScriptEvent(entities.player(),SM_CURSORMODE);
+			CSEND = 0;
+			SendIOScriptEvent(entities.player(), SM_CURSORMODE);
 		}
 	}
-
-	static PlayerInterfaceFlags lOldInterfaceTemp=0;
-
+	
+	static PlayerInterfaceFlags lOldInterfaceTemp = 0;
+	
 	if(TRUE_PLAYER_MOUSELOOK_ON) {
 		if(bInverseInventory) {
 			bRenderInCursorMode=true;
@@ -1367,7 +1416,7 @@ void ARX_INTERFACE_Reset()
 void ArxGame::manageKeyMouse() {
 	arx_assert(entities.player());
 	
-	if(ARXmenu.currentmode == AMCM_OFF) {
+	if(ARXmenu.mode() == Mode_InGame) {
 		Entity * pIO = NULL;
 
 		if(!BLOCK_PLAYER_CONTROLS) {
@@ -1378,7 +1427,7 @@ void ArxGame::manageKeyMouse() {
 				Vec2s poss = MemoMouse;
 
 				// mode systemshock
-				if(config.input.mouseLookToggle && config.input.autoReadyWeapon == false) {
+				if(config.input.mouseLookToggle && config.input.autoReadyWeapon != AlwaysAutoReadyWeapon) {
 					
 					DANAEMouse = g_size.center();
 					
@@ -1458,15 +1507,14 @@ void ArxGame::manageKeyMouse() {
 						if(bOk) {
 							if(!(FlyingOverIO->_itemdata->playerstacksize <= 1 && FlyingOverIO->_itemdata->count > 1)) {
 								SendIOScriptEvent(FlyingOverIO, SM_INVENTORYUSE);
-
-								if (!(config.input.autoReadyWeapon == false && config.input.mouseLookToggle)) {
+								if(config.input.autoReadyWeapon == AlwaysAutoReadyWeapon || !config.input.mouseLookToggle) {
 									TRUE_PLAYER_MOUSELOOK_ON = false;
 								}
 							}
 						}
 					}
 
-					if(config.input.autoReadyWeapon == false && config.input.mouseLookToggle) {
+					if(config.input.autoReadyWeapon != AlwaysAutoReadyWeapon && config.input.mouseLookToggle) {
 						EERIEMouseButton &= ~2;
 					}
 				}
@@ -1494,7 +1542,7 @@ void ArxGame::manageKeyMouse() {
 			PLAYER_MOUSELOOK_ON = false;
 	}
 
-	if(ARXmenu.currentmode != AMCM_OFF) {
+	if(ARXmenu.mode() != Mode_InGame) {
 		PLAYER_MOUSELOOK_ON = false;
 	}
 
@@ -1700,7 +1748,7 @@ void ArxGame::manageKeyMouse() {
 
 				eyeball.angle.setPitch(MAKEANGLE(eyeball.angle.getPitch()));
 				eyeball.angle.setYaw(MAKEANGLE(eyeball.angle.getYaw() - rotation.x));
-			} else if(ARXmenu.currentmode != AMCM_NEWQUEST) {
+			} else if(ARXmenu.mode() != Mode_CharacterCreation) {
 
 				float iangle = player.angle.getPitch();
 
@@ -1798,7 +1846,7 @@ void ArxGame::manageEditorControls() {
 	eMouseState = MOUSE_IN_WORLD;
 
 	if(   TRUE_PLAYER_MOUSELOOK_ON
-	   && config.input.autoReadyWeapon == false
+	   && config.input.autoReadyWeapon != AlwaysAutoReadyWeapon
 	   && config.input.mouseLookToggle
 	) {
 		DANAEMouse = g_size.center();
@@ -1946,7 +1994,7 @@ void ArxGame::manageEditorControls() {
 				PutInInventory();
 			} else if(ARX_INTERFACE_MouseInBook()) {
 				if(g_playerBook.currentPage() == BOOKMODE_STATS) {
-					SendIOScriptEvent(DRAGINTER,SM_INVENTORYUSE);
+					SendIOScriptEvent(DRAGINTER, SM_INVENTORYUSE);
 					COMBINE=NULL;
 				}
 			} else if(DRAGINTER->ioflags & IO_GOLD) {
@@ -2010,8 +2058,7 @@ void ArxGame::manageEditorControls() {
 				} else {
 					if(io != COMBINE) {
 						std::string temp = COMBINE->idString();
-						EVENT_SENDER=COMBINE;
-	
+						EVENT_SENDER = COMBINE;
 						if(boost::starts_with(COMBINE->className(), "keyring")) {
 							ARX_KEYRING_Combine(io);
 						} else {
@@ -2049,18 +2096,18 @@ void ArxGame::manageEditorControls() {
 					}
 				}
 			}
-	
+			
 			COMBINEGOLD = false;
 			bool bQuitCombine = true;
-	
+			
 			if((player.Interface & INTER_INVENTORY)) {
 				if(player.bag) {
 					bQuitCombine = g_playerInventoryHud.updateInput();
 				}
 			}
-	
+			
 			if(bQuitCombine) {
-				COMBINE=NULL;
+				COMBINE = NULL;
 			}
 		}
 		
@@ -2077,7 +2124,7 @@ void ArxGame::manageEditorControls() {
 				   && !(light->extras & EXTRAS_NO_IGNIT)
 				   && light->m_screenRect.contains(Vec2f(DANAEMouse))
 				) {
-					SpecialCursor = CURSOR_INTERACTION_ON;
+					cursorSetInteraction();
 				}
 			}
 		}
@@ -2103,7 +2150,7 @@ void ArxGame::manageEditorControls() {
 		
 		// Checks for Object Dragging
 		if(   DRAGGING
-		   && (!PLAYER_MOUSELOOK_ON || !config.input.autoReadyWeapon)
+		   && (!PLAYER_MOUSELOOK_ON || config.input.autoReadyWeapon != AlwaysAutoReadyWeapon)
 		   && !GInput->actionPressed(CONTROLS_CUST_MAGICMODE)
 		   && !DRAGINTER
 		) {
@@ -2122,13 +2169,15 @@ void ArxGame::manageEditorControls() {
 				}
 				
 				if(bOk) {
+					
 					Set_DragInter(io);
 					
 					if(io) {
+						
 						ARX_PLAYER_Remove_Invisibility();
 						
 						if(DRAGINTER->show == SHOW_FLAG_ON_PLAYER) {
-							ARX_EQUIPMENT_UnEquip(entities.player(),DRAGINTER);
+							ARX_EQUIPMENT_UnEquip(entities.player(), DRAGINTER);
 							RemoveFromAllInventories(DRAGINTER);
 							DRAGINTER->bbox2D.max.x = -1;
 						}
@@ -2136,16 +2185,16 @@ void ArxGame::manageEditorControls() {
 						if((io->ioflags & IO_NPC) || (io->ioflags & IO_FIX)) {
 							Set_DragInter(NULL);
 						} else {
-							
 							if(io->ioflags & IO_UNDERWATER) {
 								io->ioflags &= ~IO_UNDERWATER;
 								ARX_SOUND_PlayInterface(SND_PLOUF, Random::getf(0.8f, 1.2f));
 							}
-							
 							DRAGINTER->show = SHOW_FLAG_NOT_DRAWN;
 							ARX_SOUND_PlayInterface(SND_INVSTD);
 						}
+						
 					}
+					
 				} else {
 					Set_DragInter(NULL);
 				}

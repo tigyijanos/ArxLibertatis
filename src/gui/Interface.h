@@ -151,50 +151,6 @@ enum ARX_INTERFACE_MOVE_MODE
 	MOVE_RUN
 };
 
-enum ARX_INTERFACE_BOOK_ITEM
-{
-	BOOK_NOTHING,
-	BOOK_STRENGTH,
-	BOOK_MIND,
-	BOOK_DEXTERITY,
-	BOOK_CONSTITUTION,
-	BOOK_STEALTH,
-	BOOK_MECANISM,
-	BOOK_INTUITION,
-	BOOK_ETHERAL_LINK,
-	BOOK_OBJECT_KNOWLEDGE,
-	BOOK_CASTING,
-	BOOK_CLOSE_COMBAT,
-	BOOK_PROJECTILE,
-	BOOK_DEFENSE,
-	BUTTON_QUICK_GENERATION,
-	BUTTON_SKIN,
-	BUTTON_DONE,
-	WND_ATTRIBUTES,
-	WND_SKILLS,
-	WND_STATUS,
-	WND_LEVEL,
-	WND_XP,
-	WND_HP,
-	WND_MANA,
-	WND_AC,
-	WND_RESIST_MAGIC,
-	WND_RESIST_POISON,
-	WND_DAMAGE,
-	WND_NEXT_LEVEL
-
-};
-
-enum ARX_INTERFACE_CURSOR_MODE
-{
-	CURSOR_UNDEFINED,
-	CURSOR_FIREBALLAIM,
-	CURSOR_INTERACTION_ON,
-	CURSOR_REDIST,
-	CURSOR_COMBINEON,
-	CURSOR_COMBINEOFF
-};
-
 enum ARX_INTERFACE_COMBAT_MODE {
 	COMBAT_MODE_OFF,
 	COMBAT_MODE_ON,
@@ -205,8 +161,6 @@ enum ARX_INTERFACE_COMBAT_MODE {
 extern INTERFACE_TC g_bookResouces;
 extern Vec2s MemoMouse;
 
-extern long SpecialCursor;
-
 extern float lSLID_VALUE;
 extern E_ARX_STATE_MOUSE eMouseState;
 extern bool bInverseInventory;
@@ -214,7 +168,7 @@ extern bool lOldTruePlayerMouseLook;
 extern bool TRUE_PLAYER_MOUSELOOK_ON;
 extern bool bForceEscapeFreeLook;
 extern bool COMBINEGOLD;
-extern bool	DRAGGING;
+extern bool DRAGGING;
 extern bool PLAYER_MOUSELOOK_ON;
 extern bool bRenderInCursorMode;
 extern bool MAGICMODE;
@@ -229,7 +183,6 @@ bool ARX_INTERFACE_MouseInBook();
 
 void ARX_INTERFACE_Reset();
 
-void ARX_INTERFACE_ManageOpenedBook();
 void ARX_INTERFACE_NoteManage();
 
 void ARX_INTERFACE_NoteOpen(Note::Type type, const std::string & tex);
@@ -241,7 +194,7 @@ bool NeedHalo(Entity * io);
 void ARX_INTERFACE_HALO_Render(Color3f color, long _lHaloType, TextureContainer * haloTexture, Vec2f pos, Vec2f ratio);
 void ResetPlayerInterface();
 void Set_DragInter(Entity * io);
-void ARX_INTERFACE_DrawNumber(const Vec2f & pos, const long num, const int _iNb, const Color color, float scale);
+void ARX_INTERFACE_DrawNumber(const Vec2f & pos, long num, int _iNb, Color color, float scale);
 
 // 0 switch 1 forceopen 2 forceclose
 void InventoryOpenClose(unsigned long t);

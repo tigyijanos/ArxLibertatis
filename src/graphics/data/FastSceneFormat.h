@@ -48,7 +48,7 @@ ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
 #include "platform/Platform.h"
 
 
-#pragma pack(push,1)
+#pragma pack(push, 1)
 
 
 const float FTS_VERSION = 0.141f;
@@ -71,11 +71,11 @@ struct UNIQUE_HEADER3 {
 };
 
 struct FAST_VERTEX {
-	f32	sy;
-	f32	ssx;
-	f32	ssz;
-	f32	stu;
-	f32	stv;
+	f32 sy;
+	f32 ssx;
+	f32 ssz;
+	f32 stu;
+	f32 stv;
 };
 
 struct FAST_EERIEPOLY {

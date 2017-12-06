@@ -74,6 +74,10 @@ extern char ** environ;
 
 #include "util/String.h"
 
+#if ARX_PLATFORM != ARX_PLATFORM_WIN32 && ARX_HAVE_OPEN && !ARX_HAVE_O_CLOEXEC
+#define O_CLOEXEC 0
+#endif
+
 namespace platform {
 
 #if ARX_PLATFORM != ARX_PLATFORM_WIN32
@@ -83,16 +87,19 @@ static process_handle run(const char * exe, const char * const args[], int stdou
 	char ** argv = const_cast<char **>(args);
 	
 	#if ARX_HAVE_OPEN
-	static int dev_null = open("/dev/null", O_RDWR);
+	static int dev_null = open("/dev/null", O_RDWR | O_CLOEXEC);
+	#if !ARX_HAVE_O_CLOEXEC && ARX_HAVE_FCNTL
+	fcntl(dev_null, F_SETFD, FD_CLOEXEC);
+	#endif
 	#endif
 	
 	pid_t pid = 0;
 	
-#if ARX_HAVE_POSIX_SPAWNP
+	#if ARX_HAVE_POSIX_SPAWNP
 	
 	// Fast POSIX implementation: posix_spawnp avoids unnecessary vm copies
 	
-	if(stdout <= 0 && unlocalized == false) {
+	if(stdout <= 0 && !unlocalized) {
 		
 		// Redirect standard input, output and error to /dev/null
 		static posix_spawn_file_actions_t * file_actionsp = NULL;
@@ -124,10 +131,10 @@ static process_handle run(const char * exe, const char * const args[], int stdou
 	
 	else
 	
-#endif
+	#endif // ARX_HAVE_POSIX_SPAWNP
 	
 	{
-#if ARX_HAVE_FORK && ARX_HAVE_EXECVP
+		#if ARX_HAVE_FORK && ARX_HAVE_EXECVP
 		
 		// Compatibility POSIX implementation
 		
@@ -172,13 +179,13 @@ static process_handle run(const char * exe, const char * const args[], int stdou
 			exit(-1);
 		}
 		
-#endif
+		#endif // ARX_HAVE_FORK && ARX_HAVE_EXECVP
 	}
 	
-#if !ARX_HAVE_POSIX_SPAWNP && !(ARX_HAVE_FORK && ARX_HAVE_EXECVP)
+	#if !ARX_HAVE_POSIX_SPAWNP && !(ARX_HAVE_FORK && ARX_HAVE_EXECVP)
 	ARX_UNUSED(argv), ARX_UNUSED(stdout), ARX_UNUSED(unlocalized), ARX_UNUSED(detach);
 	#warning "Executing helper processes not supported on this system."
-#endif
+	#endif
 	
 	return (pid <= 0) ? 0 : pid;
 }

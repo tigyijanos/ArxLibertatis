@@ -17,7 +17,7 @@
  * along with Arx Libertatis.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "graphics/opengl/GLTexture2D.h"
+#include "graphics/opengl/GLTexture.h"
 
 #include "graphics/Math.h"
 #include "graphics/opengl/GLTextureStage.h"
@@ -26,20 +26,20 @@
 #include "io/fs/FilePath.h" // TODO remove
 
 
-GLTexture2D::GLTexture2D(OpenGLRenderer * _renderer)
+GLTexture::GLTexture(OpenGLRenderer * _renderer)
 	: renderer(_renderer)
 	, tex(GL_NONE)
 	, wrapMode(TextureStage::WrapRepeat)
 	, minFilter(TextureStage::FilterLinear)
 	, magFilter(TextureStage::FilterNearest)
 	, isNPOT(false)
-{}
+{ }
 
-GLTexture2D::~GLTexture2D() {
-	Destroy();
+GLTexture::~GLTexture() {
+	destroy();
 }
 
-bool GLTexture2D::Create() {
+bool GLTexture::create() {
 	
 	arx_assert_msg(tex == GL_NONE, "leaking OpenGL texture");
 	
@@ -50,14 +50,14 @@ bool GLTexture2D::Create() {
 	minFilter = TextureStage::FilterNearest;
 	magFilter = TextureStage::FilterLinear;
 	
-	Vec2i nextPowerOfTwo(GetNextPowerOf2(size.x), GetNextPowerOf2(size.y));
-	storedSize = renderer->hasTextureNPOT() ? size : nextPowerOfTwo;
-	isNPOT = (size != nextPowerOfTwo);
+	Vec2i nextPowerOfTwo(GetNextPowerOf2(unsigned(getSize().x)), GetNextPowerOf2(unsigned(getSize().y)));
+	m_storedSize = renderer->hasTextureNPOT() ? getSize() : nextPowerOfTwo;
+	isNPOT = (getSize() != nextPowerOfTwo);
 	
 	return (tex != GL_NONE);
 }
 
-void GLTexture2D::Upload() {
+void GLTexture::upload() {
 	
 	arx_assert(tex != GL_NONE);
 	
@@ -65,55 +65,55 @@ void GLTexture2D::Upload() {
 	renderer->GetTextureStage(0)->current = this;
 	
 	// I8 to L8A8
-	if(!renderer->hasIntensityTextures() && (flags & Intensity)) {
-		arx_assert(mFormat == Image::Format_L8);
+	if(!renderer->hasIntensityTextures() && isIntensity()) {
+		arx_assert(getFormat() == Image::Format_L8);
 		Image converted;
-		converted.Create(storedSize.x, storedSize.y, Image::Format_L8A8);
-		unsigned char * input = mImage.GetData();
-		unsigned char * end = input + storedSize.x * storedSize.y;
-		unsigned char * output = converted.GetData();
+		converted.create(size_t(getStoredSize().x), size_t(getStoredSize().y), Image::Format_L8A8);
+		unsigned char * input = m_image.getData();
+		unsigned char * end = input + getStoredSize().x * getStoredSize().y;
+		unsigned char * output = converted.getData();
 		for(; input != end; input++) {
 			*output++ = *input;
 			*output++ = *input;
 		}
-		mImage = converted;
-		mFormat = Image::Format_L8A8;
-		flags &= ~Intensity;
+		m_image = converted;
+		m_format = Image::Format_L8A8;
+		m_flags &= ~Intensity;
 	}
 	
 	if(!renderer->hasBGRTextureTransfer()
-	   && (mFormat == Image::Format_B8G8R8 || mFormat == Image::Format_B8G8R8A8)) {
-		Image::Format rgbFormat = mFormat == Image::Format_B8G8R8 ? Image::Format_R8G8B8 : Image::Format_R8G8B8A8;
-		mImage.ConvertTo(rgbFormat);
-		mFormat = rgbFormat;
+	   && (getFormat() == Image::Format_B8G8R8 || getFormat() == Image::Format_B8G8R8A8)) {
+		Image::Format rgbFormat = getFormat() == Image::Format_B8G8R8 ? Image::Format_R8G8B8 : Image::Format_R8G8B8A8;
+		m_image.convertTo(rgbFormat);
+		m_format = rgbFormat;
 	}
 	
 	GLint internalUnsized, internalSized;
 	GLenum format;
-	if(flags & Intensity) {
+	if(isIntensity()) {
 		internalUnsized = GL_INTENSITY, internalSized = GL_INTENSITY8, format = GL_RED;
-	} else if(mFormat == Image::Format_L8) {
+	} else if(getFormat() == Image::Format_L8) {
 		internalUnsized = GL_LUMINANCE, internalSized = GL_LUMINANCE8, format = GL_LUMINANCE;
-	} else if(mFormat == Image::Format_A8) {
+	} else if(getFormat() == Image::Format_A8) {
 		internalUnsized = GL_ALPHA, internalSized = GL_ALPHA8, format = GL_ALPHA;
-	} else if(mFormat == Image::Format_L8A8) {
+	} else if(getFormat() == Image::Format_L8A8) {
 		internalUnsized = GL_LUMINANCE_ALPHA, internalSized = GL_LUMINANCE8_ALPHA8, format = GL_LUMINANCE_ALPHA;
-	} else if(mFormat == Image::Format_R8G8B8) {
+	} else if(getFormat() == Image::Format_R8G8B8) {
 		internalUnsized = GL_RGB, internalSized = GL_RGB8, format = GL_RGB;
-	} else if(mFormat == Image::Format_B8G8R8) {
+	} else if(getFormat() == Image::Format_B8G8R8) {
 		internalUnsized = GL_RGB, internalSized = GL_RGB8, format = GL_BGR;
-	} else if(mFormat == Image::Format_R8G8B8A8) {
+	} else if(getFormat() == Image::Format_R8G8B8A8) {
 		internalUnsized = GL_RGBA, internalSized = GL_RGBA8, format = GL_RGBA;
-	} else if(mFormat == Image::Format_B8G8R8A8) {
+	} else if(getFormat() == Image::Format_B8G8R8A8) {
 		internalUnsized = GL_RGBA, internalSized = GL_RGBA8, format = GL_BGRA;
 	} else {
-		arx_assert_msg(false, "Unsupported image format: %ld", long(mFormat));
+		arx_assert_msg(false, "Unsupported image format: %ld", long(getFormat()));
 		return;
 	}
 	GLint internal = renderer->hasSizedTextureFormats() ? internalSized : internalUnsized;
 	
-	if(storedSize != size) {
-		flags &= ~HasMipmaps;
+	if(getStoredSize() != getSize()) {
+		m_flags &= ~HasMipmaps;
 	}
 	
 	if(hasMipmaps()) {
@@ -127,26 +127,26 @@ void GLTexture2D::Upload() {
 	
 	// TODO handle GL_MAX_TEXTURE_SIZE
 	
-	if(storedSize != size) {
+	if(getStoredSize() != getSize()) {
 		Image extended;
-		extended.Create(storedSize.x, storedSize.y, mImage.GetFormat());
-		extended.extendClampToEdgeBorder(mImage);
-		glTexImage2D(GL_TEXTURE_2D, 0, internal, storedSize.x, storedSize.y, 0, format,
-		             GL_UNSIGNED_BYTE, extended.GetData());
+		extended.create(size_t(getStoredSize().x), size_t(getStoredSize().y), m_image.getFormat());
+		extended.extendClampToEdgeBorder(m_image);
+		glTexImage2D(GL_TEXTURE_2D, 0, internal, getStoredSize().x, getStoredSize().y, 0, format,
+		             GL_UNSIGNED_BYTE, extended.getData());
 	} else {
-		glTexImage2D(GL_TEXTURE_2D, 0, internal, size.x, size.y, 0, format,
-		             GL_UNSIGNED_BYTE, mImage.GetData());
+		glTexImage2D(GL_TEXTURE_2D, 0, internal, getSize().x, getSize().y, 0, format,
+		             GL_UNSIGNED_BYTE, m_image.getData());
 	}
 	
 }
 
-void GLTexture2D::Destroy() {
+void GLTexture::destroy() {
 	
 	if(tex) {
 		glDeleteTextures(1, &tex), tex = GL_NONE;
 	}
 	
-	for(size_t i = 0; i < renderer->GetTextureStageCount(); i++) {
+	for(size_t i = 0; i < renderer->getTextureStageCount(); i++) {
 		GLTextureStage * stage = renderer->GetTextureStage(i);
 		if(stage->tex == this) {
 			stage->tex = NULL;
@@ -155,6 +155,7 @@ void GLTexture2D::Destroy() {
 			stage->current = NULL;
 		}
 	}
+	
 }
 
 static const GLint arxToGlWrapMode[] = {
@@ -176,7 +177,7 @@ static const GLint arxToGlFilter[][2] = {
 	}
 };
 
-void GLTexture2D::apply(GLTextureStage * stage) {
+void GLTexture::apply(GLTextureStage * stage) {
 	
 	arx_assert(stage != NULL);
 	arx_assert(stage->tex == this);
@@ -204,7 +205,7 @@ void GLTexture2D::apply(GLTextureStage * stage) {
 	
 }
 
-void GLTexture2D::updateMaxAnisotropy() {
+void GLTexture::updateMaxAnisotropy() {
 	
 	if(hasMipmaps()) {
 		glBindTexture(GL_TEXTURE_2D, tex);

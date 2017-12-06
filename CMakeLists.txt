@@ -689,6 +689,7 @@ else(MSVC)
 	check_symbol_exists(wordexp "wordexp.h" ARX_HAVE_WORDEXP)
 	
 	check_symbol_exists(open "fcntl.h" ARX_HAVE_OPEN)
+	check_symbol_exists(O_CLOEXEC "fcntl.h" ARX_HAVE_O_CLOEXEC)
 	check_symbol_exists(fcntl "fcntl.h" ARX_HAVE_FCNTL)
 	
 	check_symbol_exists(chdir "unistd.h" ARX_HAVE_CHDIR)
@@ -962,13 +963,14 @@ set(GRAPHICS_SOURCES
 
 set(GRAPHICS_OPENGL_SOURCES
 	src/graphics/opengl/GLDebug.cpp
-	src/graphics/opengl/GLTexture2D.cpp
+	src/graphics/opengl/GLTexture.cpp
 	src/graphics/opengl/GLTextureStage.cpp
 	src/graphics/opengl/GLVertexBuffer.cpp
 	src/graphics/opengl/OpenGLRenderer.cpp
 )
 
 set(GUI_SOURCES
+	src/gui/CharacterCreation.cpp
 	src/gui/CinematicBorder.cpp
 	src/gui/Console.cpp
 	src/gui/Credits.cpp

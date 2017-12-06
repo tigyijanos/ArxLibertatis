@@ -64,7 +64,7 @@ bool is_regular_file(const path & p) {
 		return false;
 	}
 	
-	return (attributes & FILE_ATTRIBUTE_DIRECTORY) == 0;	
+	return (attributes & FILE_ATTRIBUTE_DIRECTORY) == 0;
 }
 
 std::time_t last_write_time(const path & p) {
@@ -82,12 +82,12 @@ std::time_t last_write_time(const path & p) {
 	
 	std::time_t writeTime = 0;
 	BOOL res = GetFileTime(hFile, &creationTime, &accessTime, &modificationTime);
-	if(res)	{
+	if(res) {
 		// Convert FILETIME to time_t: http://support.microsoft.com/default.aspx?scid=KB;en-us;q167296
-		LONGLONG value = modificationTime.dwHighDateTime; 
+		LONGLONG value = modificationTime.dwHighDateTime;
 		value <<= 32;
-		value |= modificationTime.dwLowDateTime; 
-		value -= 116444736000000000; 
+		value |= modificationTime.dwLowDateTime;
+		value -= 116444736000000000;
 		writeTime = (std::time_t)(value / 10000000);
 	}
 	

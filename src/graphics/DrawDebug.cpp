@@ -219,7 +219,7 @@ static void drawDebugPaths() {
 			}
 		}
 		
-		if(path->height != 0 || ((path->flags & PATH_LOOP) && points.size() > 0)) {
+		if(path->height != 0 || ((path->flags & PATH_LOOP) && !points.empty())) {
 			points.push_back(points[0]);
 		}
 		
@@ -582,12 +582,12 @@ static float pointInTriangle(Vec2f p, Vec3f a, Vec3f b, Vec3f c) {
 }
 
 static void drawDebugMaterialTexture(Vec2f & textpos, const std::string & type,
-                                     const Texture2D & t, Color color) {
+                                     const Texture & t, Color color) {
 	
 	const std::string & name = t.getFileName().string();
 	
 	std::ostringstream oss;
-	oss << "(" << t.GetFormat() << ", " << t.getSize().x << "×" << t.getSize().y;
+	oss << "(" << t.getFormat() << ", " << t.getSize().x << "×" << t.getSize().y;
 	if(t.getStoredSize() != t.getSize()) {
 		oss << " [" << t.getStoredSize().x << "×" << t.getStoredSize().y << "]";
 	}

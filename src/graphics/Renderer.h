@@ -35,7 +35,6 @@ class TextureContainer;
 class TextureStage;
 class Image;
 class Texture;
-class Texture2D;
 template <class Vertex> class VertexBuffer;
 
 enum BlendingFactor {
@@ -257,8 +256,8 @@ public:
 		
 		virtual ~Listener() { }
 		
-		virtual void onRendererInit(Renderer &) { }
-		virtual void onRendererShutdown(Renderer &) { }
+		virtual void onRendererInit(Renderer & renderer) { ARX_UNUSED(renderer); }
+		virtual void onRendererShutdown(Renderer & renderer) { ARX_UNUSED(renderer); }
 		
 	};
 	
@@ -298,6 +297,12 @@ public:
 		Static,
 		Dynamic,
 		Stream
+	};
+	
+	enum AlphaCutoutAntialising {
+		NoAlphaCutoutAA = 0,
+		FuzzyAlphaCutoutAA = 1,
+		CrispAlphaCutoutAA = 2
 	};
 	
 	Renderer();
@@ -342,7 +347,7 @@ public:
 	virtual void reloadColorKeyTextures() = 0;
 
 	// Factory
-	virtual Texture2D * CreateTexture2D() = 0;
+	virtual Texture * createTexture() = 0;
 	
 	// Viewport
 	virtual void SetViewport(const Rect & viewport) = 0;
@@ -363,9 +368,9 @@ public:
 	virtual void SetFillMode(FillMode mode) = 0;
 	
 	// Texturing
-	unsigned int GetTextureStageCount() const { return m_TextureStages.size(); }
-	TextureStage * GetTextureStage(unsigned int textureStage);
-	const TextureStage * GetTextureStage(unsigned int textureStage) const;
+	size_t getTextureStageCount() const { return m_TextureStages.size(); }
+	TextureStage * GetTextureStage(size_t textureStage);
+	const TextureStage * GetTextureStage(size_t textureStage) const;
 	void ResetTexture(unsigned int textureStage);
 	Texture * GetTexture(unsigned int textureStage) const;
 	void SetTexture(unsigned int textureStage, Texture * pTexture);
@@ -373,6 +378,8 @@ public:
 	
 	virtual float getMaxSupportedAnisotropy() const = 0;
 	virtual void setMaxAnisotropy(float value) = 0;
+	
+	virtual AlphaCutoutAntialising getMaxSupportedAlphaCutoutAntialiasing() const = 0;
 	
 	virtual VertexBuffer<TexturedVertex> * createVertexBufferTL(size_t capacity, BufferUsage usage) = 0;
 	virtual VertexBuffer<SMY_VERTEX> * createVertexBuffer(size_t capacity, BufferUsage usage) = 0;

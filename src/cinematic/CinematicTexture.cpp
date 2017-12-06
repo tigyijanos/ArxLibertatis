@@ -71,34 +71,25 @@ CinematicBitmap* CreateCinematicBitmap(const res::path & path, int scale) {
 		return 0;
 	}
 	
-	CinematicBitmap	* bi = new CinematicBitmap();
+	CinematicBitmap * bi = new CinematicBitmap();
 	if(!bi)
 		return 0;
 
 	LogDebug("loading cinematic texture " << path);
 
-	size_t dataSize = 0;
-	
 	res::path filename = path;
-	filename.set_ext("bmp");
-	char * data = g_resources->readAlloc(filename, dataSize);
-	if(!data) {
-		filename.set_ext("tga");
-		data = g_resources->readAlloc(filename, dataSize);
-	}
-
-	if(!data) {
+	bool foundPath = g_resources->getFile(filename.set_ext(".bmp")) != NULL;
+	foundPath = foundPath || g_resources->getFile(filename.set_ext("tga"));
+	if(!foundPath) {
 		LogError << path << " not found";
 		delete bi;
 		return 0;
 	}
-
+	
 	Image cinematicImage;
-	cinematicImage.LoadFromMemory(data, dataSize);
-
-	free(data);
-
-	Vec2i size = Vec2i(cinematicImage.GetWidth(), cinematicImage.GetHeight());
+	cinematicImage.load(filename);
+	
+	Vec2i size = Vec2i(cinematicImage.getWidth(), cinematicImage.getHeight());
 	Vec2i nb = size / cinMaxSize;
 	
 	if(size.x % cinMaxSize.x)
@@ -129,10 +120,11 @@ CinematicBitmap* CreateCinematicBitmap(const res::path & path, int scale) {
 		while(nbxx) {
 			int w2 = (w - cinMaxSize.x) < 0 ? w : cinMaxSize.x;
 
-			Texture2D* tex = GRenderer->CreateTexture2D();
-			tex->Init(w2, h2, cinematicImage.GetFormat());
-			tex->GetImage().Copy(cinematicImage, 0, 0, bi->m_size.x - w, bi->m_size.y - h, w2, h2);
-			tex->Upload();
+			Texture * tex = GRenderer->createTexture();
+			tex->create(size_t(w2), size_t(h2), cinematicImage.getFormat());
+			tex->getImage().copy(cinematicImage, 0, 0,
+			                     size_t(bi->m_size.x - w), size_t(bi->m_size.y - h), size_t(w2), size_t(h2));
+			tex->upload();
 			
 			{
 			Vec2i depc = Vec2i((bi->m_count.x - nbxx) * scale, (bi->m_count.y - nb.y) * scale);
@@ -235,7 +227,7 @@ void CinematicGrid::FreeGrille() {
 	m_mats.clear();
 }
 
-void CinematicGrid::AddQuadUVs(Vec2i depc, Vec2i tc, Vec2i bitmappos, Vec2i bitmapw, Texture2D * tex) {
+void CinematicGrid::AddQuadUVs(Vec2i depc, Vec2i tc, Vec2i bitmappos, Vec2i bitmapw, Texture * tex) {
 	size_t matIdx = AddMaterial(tex);
 	m_mats[matIdx].bitmapdep = bitmappos;
 	m_mats[matIdx].bitmap = bitmapw;
@@ -295,13 +287,13 @@ void CinematicGrid::AddQuadUVs(Vec2i depc, Vec2i tc, Vec2i bitmappos, Vec2i bitm
 void CinematicGrid::ReajustUV() {
 	
 	C_UV* uvs = m_uvs.data();
-
-	for(std::vector<C_INDEXED>::iterator mat = m_mats.begin(); mat != m_mats.end(); ++mat)
-	{
-		Texture2D* tex = mat->tex;
-
-		if(!tex)
+	
+	for(std::vector<C_INDEXED>::iterator mat = m_mats.begin(); mat != m_mats.end(); ++mat) {
+		
+		Texture * tex = mat->tex;
+		if(!tex) {
 			return;
+		}
 		
 		Vec2i size = tex->getStoredSize();
 		
@@ -329,7 +321,8 @@ void CinematicGrid::GetIndNumCube(int cx, int cy, int * i1, int * i2, int * i3, 
 	*i4 = *i3 + 1;
 }
 
-size_t CinematicGrid::AddMaterial(Texture2D * tex) {
+size_t CinematicGrid::AddMaterial(Texture * tex) {
+	
 	size_t matIdx = m_mats.size();
 	m_mats.resize(matIdx + 1);
 

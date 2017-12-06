@@ -395,16 +395,14 @@ static EERIE_3DOBJ * CreateIntermediaryMesh(const EERIE_3DOBJ * obj1, const EERI
 	// We reset all data to create a fresh object
 	work->cub = obj1->cub;
 	work->quat = obj1->quat;
-
+	
 	// Linked objects are linked to this object.
 	if(obj1->linked.size() > obj2->linked.size()) {
 		work->linked = obj1->linked;
-	} else if(obj2->linked.size() > 0) {
-		work->linked = obj2->linked;
 	} else {
-		work->linked.clear();
+		work->linked = obj2->linked;
 	}
-
+	
 	// Is the origin of object in obj1 or obj2 ? Retreives it for work object
 	if(IsInSelection(obj1, obj1->origin, tw1)) {
 		work->point0 = obj2->point0;
@@ -423,8 +421,7 @@ static EERIE_3DOBJ * CreateIntermediaryMesh(const EERIE_3DOBJ * obj1, const EERI
 		   || action.name == "head2chest"
 		   || action.name == "chest2leggings"
 		) {
-			ObjectAddAction(work, action.name, action.act,
-							action.sfx, &obj1vertexlist2[action.idx.handleData()]);
+			ObjectAddAction(work, action.name, action.act, action.sfx, &obj1vertexlist2[action.idx.handleData()]);
 		}
 	}
 
@@ -436,8 +433,7 @@ static EERIE_3DOBJ * CreateIntermediaryMesh(const EERIE_3DOBJ * obj1, const EERI
 		   || action.name == "head2chest"
 		   || action.name == "chest2leggings"
 		) {
-			ObjectAddAction(work, action.name, action.act,
-							action.sfx, &obj2vertexlist2[action.idx.handleData()]);
+			ObjectAddAction(work, action.name, action.act, action.sfx, &obj2vertexlist2[action.idx.handleData()]);
 		}
 	}
 

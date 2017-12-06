@@ -34,9 +34,7 @@ EYEBALL_DEF eyeball;
 float MagicSightFader=0.f;
 
 static TextureContainer * Flying_Eye = NULL;
-static EERIE_3DOBJ * eyeballobj = NULL;			// EyeBall 3D Object	// NEEDTO: Load dynamically
-
-extern float PULSATE;
+static EERIE_3DOBJ * eyeballobj = NULL; // EyeBall 3D Object
 
 void FlyingEye_Init() {
 	Flying_Eye = TextureContainer::LoadUI("graph/particles/flying_eye_fx");

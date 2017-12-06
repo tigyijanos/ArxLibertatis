@@ -26,6 +26,7 @@
 #include "game/Camera.h"
 #include "game/EntityManager.h"
 #include "game/Player.h"
+#include "gui/Cursor.h"
 #include "gui/Interface.h"
 #include "graphics/data/TextureContainer.h"
 #include "graphics/Renderer.h"
@@ -40,7 +41,7 @@ ARX_NECKLACE necklace;
 
 void NecklaceInit() {
 	
-	memset(&necklace,0,sizeof(ARX_NECKLACE));
+	memset(&necklace, 0, sizeof(ARX_NECKLACE));
 	necklace.lacet = loadObject("graph/interface/book/runes/lacet.teo");
 	
 	necklace.runes[RUNE_AAM] =         loadObject("graph/interface/book/runes/runes_aam.teo");
@@ -206,7 +207,7 @@ void ARX_INTERFACE_ManageOpenedBook_Finish(const Vec2f & mousePos)
 					
 					PopAllTriangleListOpaque(baseState.blendAdditive());
 					
-					SpecialCursor=CURSOR_INTERACTION_ON;
+					cursorSetInteraction();
 					
 					if(eeMouseDown1()) {
 						PlayerBookDrawRune((Rune)i);

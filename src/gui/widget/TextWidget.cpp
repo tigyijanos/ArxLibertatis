@@ -37,11 +37,9 @@
 #include "input/Input.h"
 #include "scene/GameSound.h"
 
-TextWidget::TextWidget(MenuButton id, Font* font, const std::string& text, Vec2f pos)
+TextWidget::TextWidget(Font* font, const std::string& text, Vec2f pos)
 	: Widget()
 {
-	m_id = id;
-
 	m_font = font;
 	
 	Vec2f scaledPos = RATIO_2(pos);
@@ -53,8 +51,6 @@ TextWidget::TextWidget(MenuButton id, Font* font, const std::string& text, Vec2f
 	
 	lColor = Color(232, 204, 142);
 	lColorHighlight=lOldColor=Color(255, 255, 255);
-
-	pRef=this;
 
 	bSelected = false;
 	
@@ -80,45 +76,12 @@ void TextWidget::SetText(const std::string & _pText)
 void TextWidget::Update() {
 }
 
-// TODO remove this
-extern CWindowMenu * pWindowMenu;
-
-bool TextWidget::OnMouseDoubleClick() {
-
-	switch(m_id) {
-	case BUTTON_MENUEDITQUEST_LOAD:
-		OnMouseClick();
-
-		if(pWindowMenu) {
-			for(size_t i = 0; i < pWindowMenu->m_pages.size(); i++) {
-				MenuPage * page = pWindowMenu->m_pages[i];
-
-				if(page->eMenuState == EDIT_QUEST_LOAD) {
-					for(size_t j = 0; j < page->m_children.m_widgets.size(); j++) {
-						Widget * widget = page->m_children.m_widgets[j]->GetZoneWithID(BUTTON_MENUEDITQUEST_LOAD_CONFIRM);
-
-						if(widget) {
-							widget->OnMouseClick();
-						}
-					}
-				}
-			}
-		}
-
-		return true;
-	default:
-		return false;
+void TextWidget::OnMouseDoubleClick() {
+	
+	if(doubleClicked) {
+		doubleClicked(this);
 	}
-
-	return false;
 }
-
-// TODO remove this
-extern TextWidget * pLoadConfirm;
-extern TextWidget * pDeleteConfirm;
-extern TextWidget * pDeleteButton;
-extern bool bNoMenu;
-extern MainMenu *mainMenu;
 
 // true: block les zones de checks
 bool TextWidget::OnMouseClick() {
@@ -142,164 +105,14 @@ bool TextWidget::OnMouseClick() {
 		default: break;
 	}
 	
-	switch(m_id) {
-		// MENULOADQUEST
-		case BUTTON_MENUEDITQUEST_LOAD: {
-			if(pWindowMenu) {
-				pLoadConfirm->SetCheckOn();
-				pLoadConfirm->lColor = pLoadConfirm->lOldColor;
-				pDeleteConfirm->SetCheckOn();
-				pDeleteConfirm->lColor = pDeleteConfirm->lOldColor;
-				
-				for(size_t i = 0; i < pWindowMenu->m_pages.size(); i++) {
-					MenuPage * page = pWindowMenu->m_pages[i];
-					
-					if(page->eMenuState == EDIT_QUEST_LOAD) {
-						page->m_savegame = m_savegame;
-						
-						for(size_t j = 0; j < page->m_children.m_widgets.size(); j++) {
-							Widget * widget = page->m_children.m_widgets[j];
-							
-							if(widget->m_id == BUTTON_MENUEDITQUEST_LOAD) {
-								((TextWidget *)widget)->bSelected = false;
-							}
-						}
-						bSelected = true;
-					}
-				}
-			}
-		}
-		break;
-		case BUTTON_MENUEDITQUEST_LOAD_CONFIRM: {
-			if(pWindowMenu) {
-				for(size_t i = 0; i < pWindowMenu->m_pages.size(); i++) {
-					MenuPage * page = pWindowMenu->m_pages[i];
-		
-					if(page->eMenuState == EDIT_QUEST_LOAD) {
-						
-						m_savegame = page->m_savegame;
-						if(m_savegame != SavegameHandle()) {
-							m_targetMenu = MAIN;
-							ARXMenu_LoadQuest(m_savegame);
-							bNoMenu=true;
-							if(pTextManage) {
-								pTextManage->Clear();
-							}
-							break;
-						}
-					}
-				}
-				
-				pLoadConfirm->SetCheckOff();
-				pLoadConfirm->lColor = Color::grayb(127);
-				pDeleteConfirm->SetCheckOff();
-				pDeleteConfirm->lColor = Color::grayb(127);
-			}
-		}
-		break;
-		// MENUSAVEQUEST
-		case BUTTON_MENUEDITQUEST_SAVE: {
-			if(pWindowMenu)
-			for(size_t i = 0; i < pWindowMenu->m_pages.size(); i++) {
-				MenuPage * page = pWindowMenu->m_pages[i];
-				
-				if(page->eMenuState == EDIT_QUEST_SAVE_CONFIRM) {
-					page->m_savegame = m_savegame;
-					TextWidget * me = (TextWidget *) page->m_children.m_widgets[1];
-					
-					if(me) {
-						m_targetMenu = MAIN;
-						ARXMenu_SaveQuest(me->m_text, me->m_savegame);
-						break;
-					}
-				}
-			}
-		}
-		break;
-		
-		// Delete save from the load menu
-		case BUTTON_MENUEDITQUEST_DELETE_CONFIRM: {
-			if(pWindowMenu) {
-				for(size_t i = 0 ; i < pWindowMenu->m_pages.size(); i++) {
-					MenuPage * page = pWindowMenu->m_pages[i];
-					if(page->eMenuState == EDIT_QUEST_LOAD) {
-						m_savegame = page->m_savegame;
-						if(m_savegame != SavegameHandle()) {
-							m_targetMenu = EDIT_QUEST_LOAD;
-							mainMenu->bReInitAll = true;
-							savegames.remove(m_savegame);
-							break;
-						}
-					}
-				}
-			}
-			pLoadConfirm->SetCheckOff();
-			pLoadConfirm->lColor = Color::grayb(127);
-			pDeleteConfirm->SetCheckOff();
-			pDeleteConfirm->lColor = Color::grayb(127);
-			break;
-		}
-			
-		// Delete save from the save menu
-		case BUTTON_MENUEDITQUEST_DELETE: {
-			if(pWindowMenu) {
-				for(size_t i = 0 ; i < pWindowMenu->m_pages.size(); i++) {
-					MenuPage * page = pWindowMenu->m_pages[i];
-					if(page->eMenuState == EDIT_QUEST_SAVE_CONFIRM) {
-						page->m_savegame = m_savegame;
-						TextWidget * me = (TextWidget *) page->m_children.m_widgets[1];
-						if(me) {
-							m_targetMenu = EDIT_QUEST_SAVE;
-							mainMenu->bReInitAll = true;
-							savegames.remove(me->m_savegame);
-							break;
-						}
-					}
-				}
-			}
-			break;
-		}
-		default:
-			break;
-	}
-
-	if(m_targetMenu == EDIT_QUEST_SAVE_CONFIRM) {
-		for(size_t i = 0; i < pWindowMenu->m_pages.size(); i++) {
-			MenuPage * page = pWindowMenu->m_pages[i];
-
-			if(page->eMenuState == m_targetMenu) {
-				page->m_savegame = m_savegame;
-				TextWidget * me = (TextWidget *) page->m_children.m_widgets[1];
-
-				if(me) {
-					me->m_savegame = m_savegame;
-					
-					if(m_savegame != SavegameHandle()) {
-						me->SetText(savegames[m_savegame.handleData()].name);
-						pDeleteButton->lColor = pDeleteButton->lOldColor;
-						pDeleteButton->SetCheckOn();
-					} else {
-						pDeleteButton->lColor = Color::grayb(127);
-						pDeleteButton->SetCheckOff();
-						me->SetText(getLocalised("system_menu_editquest_newsavegame"));
-					}
-					
-					page->AlignElementCenter(me);
-				}
-			}
-		}
-	}
-	
 	ARX_SOUND_PlayMenu(SND_MENU_CLICK);
 	
 	return false;
 }
 
 static void FontRenderText(Font * _pFont, const Rectf & rzone, const std::string & _pText, Color _c) {
-	Rect rect(rzone);
-	if(pTextManage && !rect.empty()) {
-		pTextManage->AddText(_pFont, _pText, rect, _c);
-	}
+	
+	ARX_UNICODE_DrawTextInRect(_pFont, rzone.topLeft(), rzone.right, _pText, _c, NULL);
 }
 
 void TextWidget::Render() {
@@ -314,39 +127,9 @@ void TextWidget::Render() {
 
 }
 
-extern MenuCursor * pMenuCursor;
-
 void TextWidget::RenderMouseOver() {
-
-	pMenuCursor->SetMouseOver();
 	
 	FontRenderText(m_font, m_rect, m_text, lColorHighlight);
 	
-	switch(m_id) {
-		case BUTTON_MENUEDITQUEST_LOAD:
-		case BUTTON_MENUEDITQUEST_SAVEINFO: {
-			
-			if(m_savegame == SavegameHandle()) {
-				g_thumbnailCursor.clear();
-				break;
-			}
-			
-			const res::path & image = savegames[m_savegame.handleData()].thumbnail;
-			if(!image.empty()) {
-				TextureContainer * t = TextureContainer::LoadUI(image, TextureContainer::NoColorKey);
-				if(t != g_thumbnailCursor.m_loadTexture) {
-					delete g_thumbnailCursor.m_loadTexture;
-					g_thumbnailCursor.m_loadTexture = t;
-				}
-				g_thumbnailCursor.m_renderTexture = g_thumbnailCursor.m_loadTexture;
-			}
-			
-			break;
-		}
-		
-		default: {
-			g_thumbnailCursor.clear();
-			break;
-		}
-	}
+	g_thumbnailCursor.clear();
 }

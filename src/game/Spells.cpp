@@ -153,14 +153,8 @@ void SpellManager::init() {
 }
 
 void SpellManager::clearAll() {
-	
 	for(size_t i = 0; i < MAX_SPELLS; i++) {
-		SpellBase * spell = m_spells[i];
-		
-		if(spell) {
-			delete spell;
-		}
-		
+		delete m_spells[i];
 		m_spells[i] = NULL;
 	}
 }
@@ -428,9 +422,8 @@ static void SPELLCAST_NotifyOnlyTarget(const SpellBase & spell) {
 			EVENT_SENDER = entities[source];
 		else
 			EVENT_SENDER = NULL;
-
 		char param[256];
-		sprintf(param,"%s %ld",spellName,(long)spell.m_level);
+		sprintf(param, "%s %ld", spellName, long(spell.m_level));
 		SendIOScriptEvent(entities[spell.m_target], SM_SPELLCAST, param);
 	}
 }
@@ -447,7 +440,7 @@ static void SPELLEND_Notify(const SpellBase & spell) {
 			if(spellName) {
 				Entity * targ = entities[spell.m_target];
 				char param[128];
-				sprintf(param,"%s %ld", spellName, (long)spell.m_level);
+				sprintf(param, "%s %ld", spellName, long(spell.m_level));
 				SendIOScriptEvent(targ, SM_SPELLEND, param);
 			}
 		}
@@ -484,9 +477,6 @@ void ARX_SPELLS_Fizzle(SpellBase * spell) {
 void ARX_SPELLS_ManageMagic() {
 	arx_assert(entities.player());
 	
-	if(ARXmenu.currentmode!=AMCM_OFF)
-		return;
-
 	Entity *io = entities.player();
 	
 	const ANIM_HANDLE * anim = io->animlayer[1].cur_anim;
@@ -711,7 +701,8 @@ void ARX_SPELLS_LaunchSpellTarget(Entity * io) {
 	}
 }
 
-float ARX_SPELLS_ApplyFireProtection(Entity * io,float damages) {
+float ARX_SPELLS_ApplyFireProtection(Entity * io, float damages) {
+	
 	if(io) {
 		SpellBase * spell = spells.getSpellOnTarget(io->index(), SPELL_FIRE_PROTECTION);
 		if(spell) {
@@ -733,7 +724,8 @@ float ARX_SPELLS_ApplyFireProtection(Entity * io,float damages) {
 	return damages;
 }
 
-float ARX_SPELLS_ApplyColdProtection(Entity * io,float damages) {
+float ARX_SPELLS_ApplyColdProtection(Entity * io, float damages) {
+	
 	SpellBase * spell = spells.getSpellOnTarget(io->index(), SPELL_COLD_PROTECTION);
 	if(spell) {
 		float modif = 1.f - (spell->m_level * ( 1.0f / 10 ));
@@ -742,7 +734,7 @@ float ARX_SPELLS_ApplyColdProtection(Entity * io,float damages) {
 		
 		damages *= modif;
 	}
-
+	
 	return damages;
 }
 
@@ -970,7 +962,6 @@ bool ARX_SPELLS_Launch(SpellType typ, EntityHandle source, SpellcastFlags flags,
 				t_spell.duration = duration;
 				return false;
 			}
-			break;
 			case SPELL_CONTROL_TARGET: {
 				long tcount = 0;
 				
@@ -1008,7 +999,6 @@ bool ARX_SPELLS_Launch(SpellType typ, EntityHandle source, SpellcastFlags flags,
 				t_spell.duration = duration;
 				return false;
 			}
-									   break;
 			default: break;
 		}
 	}

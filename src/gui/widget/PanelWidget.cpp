@@ -25,7 +25,6 @@ PanelWidget::PanelWidget()
 	: Widget()
 {
 	m_children.clear();
-	pRef = this;
 }
 
 PanelWidget::~PanelWidget() {
@@ -80,23 +79,12 @@ void PanelWidget::Render() {
 	}
 }
 
-Widget * PanelWidget::GetZoneWithID(MenuButton _iID) {
-	
-	BOOST_FOREACH(Widget * w, m_children) {
-		if(Widget * pZone = w->GetZoneWithID(_iID)) {
-			return pZone;
-		}
-	}
-	
-	return NULL;
-}
-
-Widget * PanelWidget::IsMouseOver(const Vec2f & mousePos) const {
+Widget * PanelWidget::IsMouseOver(const Vec2f & mousePos) {
 
 	if(m_rect.contains(mousePos)) {
 		BOOST_FOREACH(Widget * w, m_children) {
 			if(w->getCheck() && w->m_rect.contains(mousePos)) {
-				return w->pRef;
+				return w;
 			}
 		}
 	}

@@ -53,6 +53,7 @@ ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
 #include "animation/AnimationRender.h"
 
 #include "core/Application.h"
+#include "core/ArxGame.h"
 #include "core/Config.h"
 #include "core/Core.h"
 #include "core/GameTime.h"
@@ -84,8 +85,6 @@ ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
 #include "window/RenderWindow.h"
 
 extern bool bQuickGenFirstClick;
-
-extern SavegameHandle LOADQUEST_SLOT;
 
 void ARXMenu_Private_Options_Video_SetResolution(bool fullscreen, int _iWidth, int _iHeight) {
 	
@@ -137,6 +136,11 @@ void ARXMenu_Options_Video_SetDetailsQuality(int _iQuality) {
 			break;
 		}
 	}
+}
+
+void ARXMenu_Options_Video_SetGamma(float gamma) {
+	config.video.gamma = glm::clamp(gamma, 0.f, 10.f);
+	mainApp->getWindow()->setGamma(1.f + (gamma / 5.f - 1.f) * 0.5f);
 }
 
 void ARXMenu_Options_Audio_SetMasterVolume(float volume) {
@@ -233,7 +237,7 @@ void ARXMenu_ResumeGame() {
 }
 
 void ARXMenu_NewQuest() {
-	MenuFader_start(true, true, AMCM_NEWQUEST);
+	MenuFader_start(Fade_In, Mode_CharacterCreation);
 	bQuickGenFirstClick = true;
 	player.gold = 0;
 	ARX_PLAYER_MakeFreshHero();

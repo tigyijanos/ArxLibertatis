@@ -59,6 +59,35 @@
 #include "gui/Menu.h"
 #include "gui/hud/SecondaryInventory.h"
 
+enum ARX_INTERFACE_CURSOR_MODE
+{
+	CURSOR_UNDEFINED,
+	CURSOR_FIREBALLAIM,
+	CURSOR_INTERACTION_ON,
+	CURSOR_REDIST,
+	CURSOR_COMBINEON,
+	CURSOR_COMBINEOFF,
+	CURSOR_READY_WEAPON
+};
+
+ARX_INTERFACE_CURSOR_MODE SpecialCursor = CURSOR_UNDEFINED;
+// Used to redist points - attributes and skill
+static long lCursorRedistValue = 0;
+
+
+bool cursorIsSpecial() {
+	return SpecialCursor != CURSOR_UNDEFINED;
+}
+
+void cursorSetInteraction() {
+	SpecialCursor = CURSOR_INTERACTION_ON;
+}
+
+void cursorSetRedistribute(long value) {
+	SpecialCursor = CURSOR_REDIST;
+	lCursorRedistValue = value;
+}
+
 
 extern float STARTED_ANGLE;
 long SPECIAL_DRAGINTER_RENDER=0;
@@ -73,9 +102,10 @@ static TextureContainer * cursorMagic = NULL;
 static TextureContainer * cursorThrowObject = NULL;
 static TextureContainer * cursorRedist = NULL;
 static TextureContainer * cursorCrossHair = NULL; // Animated Hand Cursor TC
+static TextureContainer * cursorReadyWeapon = NULL;
 TextureContainer * cursorMovable = NULL;   // TextureContainer for Movable Items (Red Cross)
 
-TextureContainer *	scursor[8];			// Animated Hand Cursor TC
+TextureContainer * scursor[8]; // Animated Hand Cursor
 
 void cursorTexturesInit() {
 	
@@ -88,6 +118,7 @@ void cursorTexturesInit() {
 	cursorRedist         = TextureContainer::LoadUI("graph/interface/cursors/add_points");
 	cursorCrossHair      = TextureContainer::LoadUI("graph/interface/cursors/cruz");
 	cursorMovable        = TextureContainer::LoadUI("graph/interface/cursors/wrong");
+	cursorReadyWeapon    = TextureContainer::LoadUI("graph/interface/icons/equipment_sword");
 	
 	arx_assert(cursorTargetOn);
 	arx_assert(cursorTargetOff);
@@ -312,7 +343,6 @@ bool Manage3DCursor(Entity * io, bool simulate) {
 extern long LOOKING_FOR_SPELL_TARGET;
 extern GameInstant LOOKING_FOR_SPELL_TARGET_TIME;
 extern bool PLAYER_INTERFACE_SHOW;
-extern long lCursorRedistValue;
 
 int iHighLight=0;
 float fHighLightAng=0.f;
@@ -439,6 +469,10 @@ static void ARX_INTERFACE_RenderCursorInternal(bool flag) {
 			SpecialCursor = CURSOR_COMBINEOFF;
 	}
 	
+	if(FlyingOverIO && config.input.autoReadyWeapon == AutoReadyWeaponNearEnemies && isEnemy(FlyingOverIO)) {
+		SpecialCursor = CURSOR_READY_WEAPON;
+	}
+	
 	if(!SPECIAL_DRAGINTER_RENDER) {
 		if(FlyingOverIO || DRAGINTER) {
 			fHighLightAng += toMs(g_platformTime.lastFrameDuration()) * 0.5f;
@@ -465,7 +499,7 @@ static void ARX_INTERFACE_RenderCursorInternal(bool flag) {
 	if(SpecialCursor || !PLAYER_MOUSELOOK_ON || DRAGINTER
 	   || (FlyingOverIO && PLAYER_MOUSELOOK_ON && !g_cursorOverBook && eMouseState != MOUSE_IN_NOTE
 	       && (FlyingOverIO->ioflags & IO_ITEM) && (FlyingOverIO->gameFlags & GFLAG_INTERACTIVITY)
-	       && !config.input.autoReadyWeapon)
+	       && config.input.autoReadyWeapon != AlwaysAutoReadyWeapon)
 	   || (MAGICMODE && PLAYER_MOUSELOOK_ON)) {
 		
 		CANNOT_PUT_IT_HERE = EntityMoveCursor_Ok;
@@ -499,7 +533,7 @@ static void ARX_INTERFACE_RenderCursorInternal(bool flag) {
 		
 		if(SpecialCursor && !DRAGINTER) {
 			if((COMBINE && COMBINE->m_icon) || COMBINEGOLD) {
-				if(TRUE_PLAYER_MOUSELOOK_ON && (config.input.autoReadyWeapon)) {
+				if(TRUE_PLAYER_MOUSELOOK_ON && config.input.autoReadyWeapon == AlwaysAutoReadyWeapon) {
 					mousePos = MemoMouse;
 				}
 				
@@ -530,8 +564,7 @@ static void ARX_INTERFACE_RenderCursorInternal(bool flag) {
 					EERIEDrawBitmap(Rectf(mousePos, size.x, size.y), .00001f, tc, Color::white);
 					
 					if(FlyingOverIO && (FlyingOverIO->ioflags & IO_BLACKSMITH)) {
-						float v=ARX_DAMAGES_ComputeRepairPrice(COMBINE,FlyingOverIO);
-						
+						float v = ARX_DAMAGES_ComputeRepairPrice(COMBINE, FlyingOverIO);
 						if(v > 0.f) {
 							long t = long(v);
 							Vec2f nuberOffset = Vec2f(-16, -10) * iconScale;
@@ -568,10 +601,17 @@ static void ARX_INTERFACE_RenderCursorInternal(bool flag) {
 				mousePos = Vec2f(320.f, 280.f) - Vec2f(surf->m_size) * 0.5f;
 				break;
 			}
-			case CURSOR_INTERACTION_ON:
+			case CURSOR_INTERACTION_ON: {
 				cursorAnimatedHand.update1();
 				surf = cursorAnimatedHand.getCurrentTexture();
 				break;
+			}
+			case CURSOR_READY_WEAPON: {
+				surf = cursorReadyWeapon;
+				arx_assert(surf);
+				mousePos -= surf->size() / s32(2);
+				break;
+			}
 			default:
 				cursorAnimatedHand.update2();
 				surf = cursorAnimatedHand.getCurrentTexture();
@@ -581,8 +621,8 @@ static void ARX_INTERFACE_RenderCursorInternal(bool flag) {
 			arx_assert(surf);
 			
 			if(SpecialCursor == CURSOR_REDIST) {
-				EERIEDrawBitmap(Rectf(mousePos, float(surf->m_size.x) * g_sizeRatio.x, float(surf->m_size.y) * g_sizeRatio.y),
-								0.f, surf, Color::white);
+				EERIEDrawBitmap(Rectf(mousePos, float(surf->m_size.x) * g_sizeRatio.x,
+				                float(surf->m_size.y) * g_sizeRatio.y), 0.f, surf, Color::white);
 				
 				Vec2f textPos = Vec2f(DANAEMouse);
 				textPos += Vec2f(17.5f, 12.5f) * g_sizeRatio;
@@ -596,12 +636,12 @@ static void ARX_INTERFACE_RenderCursorInternal(bool flag) {
 				EERIEDrawBitmap(Rectf(mousePos, size.x, size.y), 0.f, surf, Color::white);
 			}
 			
-			SpecialCursor = 0;
+			SpecialCursor = CURSOR_UNDEFINED;
 		} else {
 			if(   !(player.m_currentMovement & PLAYER_CROUCH)
 			   && !BLOCK_PLAYER_CONTROLS
 			   && GInput->actionPressed(CONTROLS_CUST_MAGICMODE)
-			   && ARXmenu.currentmode == AMCM_OFF
+			   && ARXmenu.mode() == Mode_InGame
 			) {
 				if(!MAGICMODE) {
 					if(player.Interface & INTER_PLAYERBOOK) {
@@ -641,7 +681,7 @@ static void ARX_INTERFACE_RenderCursorInternal(bool flag) {
 					
 					Vec2f pos = mousePos;
 					
-					if(TRUE_PLAYER_MOUSELOOK_ON && config.input.autoReadyWeapon) {
+					if(TRUE_PLAYER_MOUSELOOK_ON && config.input.autoReadyWeapon == AlwaysAutoReadyWeapon) {
 						pos = MemoMouse;
 					}
 					
@@ -744,4 +784,3 @@ void ARX_INTERFACE_RenderCursor(bool flag) {
 		GRenderer->GetTextureStage(0)->setWrapMode(TextureStage::WrapRepeat);
 	}
 }
-

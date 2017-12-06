@@ -63,36 +63,25 @@ ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
  *
  */
 
-#define OPTIM_COMPUTE_INTERVALS(VV0,VV1,VV2,D0,D1,D2,D0D1,D0D2,A,B,C,X0,X1) \
+#define OPTIM_COMPUTE_INTERVALS(VV0, VV1, VV2, D0, D1, D2, D0D1, D0D2, A, B, C, X0, X1) \
 	{ \
-		if(D0D1>0.0f) \
-		{ \
-			/* here we know that D0D2<=0.0 */ \
+		if(D0D1 > 0.0f) { \
+			/* here we know that D0D2 <= 0.0 */ \
 			/* that is D0, D1 are on the same side, D2 on the other or on the plane */ \
-			A=VV2; B=(VV0-VV2)*D2; C=(VV1-VV2)*D2; X0=D2-D0; X1=D2-D1; \
-		} \
-		else if(D0D2>0.0f)\
-		{ \
-			/* here we know that d0d1<=0.0 */ \
-			A=VV1; B=(VV0-VV1)*D1; C=(VV2-VV1)*D1; X0=D1-D0; X1=D1-D2; \
-		} \
-		else if(D1*D2>0.0f || D0!=0.0f) \
-		{ \
-			/* here we know that d0d1<=0.0 or that D0!=0.0 */ \
-			A=VV0; B=(VV1-VV0)*D0; C=(VV2-VV0)*D0; X0=D0-D1; X1=D0-D2; \
-		} \
-		else if(D1!=0.0f) \
-		{ \
-			A=VV1; B=(VV0-VV1)*D1; C=(VV2-VV1)*D1; X0=D1-D0; X1=D1-D2; \
-		} \
-		else if(D2!=0.0f) \
-		{ \
-			A=VV2; B=(VV0-VV2)*D2; C=(VV1-VV2)*D2; X0=D2-D0; X1=D2-D1; \
-		} \
-		else \
-		{ \
+			A = VV2; B = (VV0 - VV2) * D2; C = (VV1 - VV2) * D2; X0 = D2 - D0; X1 = D2 - D1; \
+		} else if(D0D2 > 0.0f) { \
+			/* here we know that d0d1 <= 0.0 */ \
+			A = VV1; B = (VV0 - VV1) * D1; C = (VV2 - VV1) * D1; X0 = D1 - D0; X1 = D1 - D2; \
+		} else if(D1 * D2 > 0.0f || D0 != 0.0f) { \
+			/* here we know that d0d1 <=0 .0 or that D0 != 0.0 */ \
+			A = VV0; B = (VV1 - VV0) * D0; C = (VV2 - VV0) * D0; X0 = D0 - D1; X1 = D0 - D2; \
+		} else if(D1 != 0.0f) { \
+			A = VV1; B = (VV0 - VV1) * D1; C = (VV2 - VV1) * D1; X0 = D1 - D0; X1 = D1 - D2; \
+		} else if(D2 != 0.0f) { \
+			A = VV2; B = (VV0 - VV2) * D2; C = (VV1 - VV2) * D2; X0 = D2 - D0; X1 = D2 - D1; \
+		} else { \
 			/* triangles are coplanar */ \
-			return coplanar_tri_tri(N1,V0,V1,V2,U0,U1,U2); \
+			return coplanar_tri_tri(N1, V0, V1, V2, U0, U1, U2); \
 		} \
 	}
 
@@ -101,7 +90,7 @@ ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
 /* this edge to edge test is based on Franlin Antonio's gem:
    "Faster Line Segment Intersection", in Graphics Gems III,
    pp. 199-202 */
-#define EDGE_EDGE_TEST(V0,U0,U1)                        \
+#define EDGE_EDGE_TEST(V0, U0, U1) \
 	Bx=U0[i0]-U1[i0];                                   \
 	By=U0[i1]-U1[i1];                                   \
 	Cx=V0[i0]-U0[i0];                                   \
@@ -121,17 +110,17 @@ ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
 		}                                               \
 	}
 
-#define EDGE_AGAINST_TRI_EDGES(V0,V1,U0,U1,U2)       \
-	{                                                \
-		float Ax,Ay,Bx,By,Cx,Cy,e,d,f;               \
-		Ax=V1[i0]-V0[i0];                            \
-		Ay=V1[i1]-V0[i1];                            \
-		/* test edge U0,U1 against V0,V1 */          \
-		EDGE_EDGE_TEST(V0,U0,U1);                    \
-		/* test edge U1,U2 against V0,V1 */          \
-		EDGE_EDGE_TEST(V0,U1,U2);                    \
-		/* test edge U2,U1 against V0,V1 */          \
-		EDGE_EDGE_TEST(V0,U2,U0);                    \
+#define EDGE_AGAINST_TRI_EDGES(V0, V1, U0, U1, U2) \
+	{ \
+		float Ax, Ay, Bx, By, Cx, Cy, e, d, f; \
+		Ax = V1[i0] - V0[i0]; \
+		Ay = V1[i1] - V0[i1]; \
+		/* test edge U0,U1 against V0,V1 */ \
+		EDGE_EDGE_TEST(V0, U0, U1); \
+		/* test edge U1,U2 against V0,V1 */ \
+		EDGE_EDGE_TEST(V0, U1, U2); \
+		/* test edge U2,U1 against V0,V1 */ \
+		EDGE_EDGE_TEST(V0, U2, U0); \
 	}
 
 static int coplanar_tri_tri(const float N[3], const float V0[3], const float V1[3],
@@ -181,26 +170,25 @@ static int coplanar_tri_tri(const float N[3], const float V0[3], const float V1[
 	return 0;
 }
 
-#define CROSS(dest,v1,v2) \
-	dest[0]=v1[1]*v2[2]-v1[2]*v2[1]; \
-	dest[1]=v1[2]*v2[0]-v1[0]*v2[2]; \
-	dest[2]=v1[0]*v2[1]-v1[1]*v2[0];
+#define CROSS(dest, v1, v2) \
+	dest[0] = v1[1] * v2[2] - v1[2] * v2[1]; \
+	dest[1] = v1[2] * v2[0] - v1[0] * v2[2]; \
+	dest[2] = v1[0] * v2[1] - v1[1] * v2[0];
 
-#define DOT(v1,v2) (v1[0]*v2[0]+v1[1]*v2[1]+v1[2]*v2[2])
+#define DOT(v1, v2) (v1[0] * v2[0] + v1[1] * v2[1] + v1[2] * v2[2])
 
-#define SUB(dest,v1,v2) \
-	dest[0]=v1[0]-v2[0]; \
-	dest[1]=v1[1]-v2[1]; \
-	dest[2]=v1[2]-v2[2];
+#define SUB(dest, v1, v2) \
+	dest[0] = v1[0] - v2[0]; \
+	dest[1] = v1[1] - v2[1]; \
+	dest[2] = v1[2] - v2[2];
 
 /* sort so that a<=b */
-#define SORT(a,b)       \
-	if(a>b)    \
-	{          \
+#define SORT(a, b) \
+	if(a > b) { \
 		float c; \
-		c=a;     \
-		a=b;     \
-		b=c;     \
+		c = a; \
+		a = b; \
+		b = c; \
 	}
 
 //***********************************************************************************************
@@ -372,33 +360,26 @@ bool Triangles_Intersect(const EERIE_TRI & v, const EERIE_TRI & u)
 
 	if (bb1.min.z > bb2.max.z) return false;
 	
-	if (tri_tri_intersect(v, u))
-		return true;
-	
-	return false;
+	return tri_tri_intersect(v, u) != 0;
 }
 
 // Cylinder y origin must be min Y of cylinder
 // Cylinder height MUST be negative FROM origin (inverted Theo XYZ system Legacy)
-bool CylinderInCylinder(const Cylinder & cyl1, const Cylinder & cyl2)
-{
-	float m1 = cyl1.origin.y;					//tokeep: max(cyl1.origin.y,cyl1.origin.y+cyl1.height);
-	float m2 = cyl2.origin.y + cyl2.height;	//tokeep: min(cyl2.origin.y,cyl2.origin.y+cyl2.height);
-
+bool CylinderInCylinder(const Cylinder & cyl1, const Cylinder & cyl2) {
+	
+	float m1 = cyl1.origin.y;
+	float m2 = cyl2.origin.y + cyl2.height;
+	
 	if (m2 > m1) return false;
-
-	m1 = cyl1.origin.y + cyl1.height;			//tokeep: min(cyl1.origin.y,cyl1.origin.y+cyl1.height);
-	m2 = cyl2.origin.y;						//tokeep: max(cyl2.origin.y,cyl2.origin.y+cyl2.height);
-
+	
+	m1 = cyl1.origin.y + cyl1.height;
+	m2 = cyl2.origin.y;
+	
 	if (m1 > m2) return false;
-
+	
 	m1 = cyl1.radius + cyl2.radius;
-
-	if(!fartherThan(Vec2f(cyl1.origin.x, cyl1.origin.z), Vec2f(cyl2.origin.x, cyl2.origin.z), m1)) {
-		return true;
-	}
-
-	return false;
+	
+	return !fartherThan(Vec2f(cyl1.origin.x, cyl1.origin.z), Vec2f(cyl2.origin.x, cyl2.origin.z), m1);
 }
 
 // Sort of...
@@ -413,12 +394,8 @@ bool SphereInCylinder(const Cylinder & cyl1, const Sphere & s)
 	m2 = s.origin.y + s.radius;
 
 	if (m1 > m2) return false;
-
-	if(!fartherThan(Vec2f(cyl1.origin.x, cyl1.origin.z), Vec2f(s.origin.x, s.origin.z), cyl1.radius + s.radius)) {
-		return true;
-	}
 	
-	return false;
+	return !fartherThan(Vec2f(cyl1.origin.x, cyl1.origin.z), Vec2f(s.origin.x, s.origin.z), cyl1.radius + s.radius);
 }
 
 //--------------------------------------------------------------------------------------
@@ -495,10 +472,10 @@ glm::mat4 toRotationMatrix(const Anglef & angle) {
 
 glm::quat angleToQuatForArrow(const Anglef & angle) {
 	float aa = angle.getPitch();
-	float ab = 90 - angle.getYaw();
+	float ab = 90.f - angle.getYaw();
 	
-	Vec3f front(0,0,1);
-	Vec3f up(0,-1,0);
+	Vec3f front(0.f, 0.f, 1.f);
+	Vec3f up(0.f, -1.f, 0.f);
 	
 	front = VRotateZ(front, aa);
 	front = VRotateY(front, ab);

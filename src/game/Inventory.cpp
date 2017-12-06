@@ -140,8 +140,7 @@ void CleanInventory() {
 	for(size_t y = 0; y < INVENTORY_Y; y++)
 	for(size_t x = 0; x < INVENTORY_X; x++) {
 		INVENTORY_SLOT & slot = g_inventory[bag][x][y];
-		
-		slot.io	 = NULL;
+		slot.io = NULL;
 		slot.show = true;
 	}
 	
@@ -331,11 +330,11 @@ private:
 			return false;
 		}
 		
+		arx_assert(item != NULL && (item->ioflags & IO_ITEM));
+		
 		if(pos.x + item->m_inventorySize.x > width || pos.y + item->m_inventorySize.y > height) {
 			return false;
 		}
-		
-		arx_assert(item != NULL && (item->ioflags & IO_ITEM));
 		
 		// Check if the whole area required by this item is empty
 		for(index_type j = pos.y; j < pos.y + item->m_inventorySize.y; j++) {
@@ -393,11 +392,11 @@ private:
 			return false;
 		}
 		
+		arx_assert(item != NULL && (item->ioflags & IO_ITEM));
+		
 		if(pos.x + item->m_inventorySize.x > width || pos.y + item->m_inventorySize.y > height) {
 			return false;
 		}
-		
-		arx_assert(item != NULL && (item->ioflags & IO_ITEM));
 		
 		Entity * io = index(pos).io;
 		
@@ -456,9 +455,6 @@ public:
 	
 	Inventory(long io, array_type & data, size_type bags, size_type width, size_type height)
 		: io(io), data(data), bags(bags), width(width), height(height) { }
-		
-	Inventory(const Inventory & o)
-		: io(o.io), data(o.data), bags(o.bags), width(o.width), height(o.height) { }
 	
 	/*!
 	 * Insert an item into the inventory
@@ -528,12 +524,12 @@ public:
 		std::sort(items.begin(), items.end(), ItemSizeComaparator());
 		
 		LogDebug("sorting");
-	#ifdef ARX_DEBUG
+		#ifdef ARX_DEBUG
 		BOOST_FOREACH(const Entity * item, items) {
 			LogDebug(" - " << item->idString() << ": "
-							<< int(item->m_inventorySize.x) << 'x' << int(item->m_inventorySize.y));
+			         << int(item->m_inventorySize.x) << 'x' << int(item->m_inventorySize.y));
 		}
-	#endif
+		#endif
 		
 		LogDebug("putting back items");
 		
@@ -1277,7 +1273,7 @@ void ARX_INVENTORY_OpenClose(Entity * _io)
 			ARX_INTERFACE_setCombatMode(COMBAT_MODE_OFF);
 		}
 
-		if(!config.input.autoReadyWeapon) {
+		if(config.input.autoReadyWeapon != AlwaysAutoReadyWeapon) {
 			TRUE_PLAYER_MOUSELOOK_ON = false;
 		}
 

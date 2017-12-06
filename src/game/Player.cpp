@@ -79,6 +79,7 @@ ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
 #include "game/spell/Cheat.h"
 #include "game/effect/Quake.h"
 
+#include "gui/CharacterCreation.h"
 #include "gui/Hud.h"
 #include "gui/Menu.h"
 #include "gui/Text.h"
@@ -129,10 +130,9 @@ ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
 
 #include "script/Script.h"
 
-extern long		HERO_SHOW_1ST;
-extern bool		REQUEST_SPEECH_SKIP;
-extern bool		DONT_ERASE_PLAYER;
-extern bool		GLOBAL_MAGIC_MODE;
+extern bool REQUEST_SPEECH_SKIP;
+extern bool DONT_ERASE_PLAYER;
+extern bool GLOBAL_MAGIC_MODE;
 
 extern ParticleManager * pParticleManager;
 
@@ -143,7 +143,6 @@ static const float TARGET_DT = 1000.f / 30.f;
 
 extern Vec3f PUSH_PLAYER_FORCE;
 extern long COLLIDED_CLIMB_POLY;
-extern long HERO_SHOW_1ST;
 
 static const float ARX_PLAYER_SKILL_STEALTH_MAX = 100.f;
 
@@ -325,7 +324,7 @@ void ARX_Player_Rune_Add(RuneFlag _ulRune)
 	int iNbSpellsAfter = 0;
 
 	for(size_t i = 0; i < SPELL_TYPES_COUNT; i++) {
-		if(spellicons[i].bSecret == false) {
+		if(!spellicons[i].bSecret) {
 			long j = 0;
 			bool bOk = true;
 
@@ -345,7 +344,7 @@ void ARX_Player_Rune_Add(RuneFlag _ulRune)
 	player.rune_flags |= _ulRune;
 
 	for(size_t i = 0; i < SPELL_TYPES_COUNT; i++) {
-		if(spellicons[i].bSecret == false) {
+		if(!spellicons[i].bSecret) {
 			long j = 0;
 			bool bOk = true;
 
@@ -443,9 +442,9 @@ void ARX_PLAYER_ComputePlayerFullStats() {
 	
 	//CHECK OVERFLOW
 	// TODO why not use relative modfiers?
-	float fFullAimTime	= getEquipmentBaseModifier(IO_EQUIPITEM_ELEMENT_AimTime);
-	float fCalcHandicap	= (player.m_attributeFull.dexterity - 10.f) * 20.f;
-
+	float fFullAimTime = getEquipmentBaseModifier(IO_EQUIPITEM_ELEMENT_AimTime);
+	float fCalcHandicap = (player.m_attributeFull.dexterity - 10.f) * 20.f;
+	
 	//CAST
 	player.Full_AimTime = PlatformDurationMsf(fFullAimTime);
 	
@@ -798,40 +797,39 @@ void ARX_PLAYER_MakeSpHero()
 
 	player.rune_flags = RuneFlags::all();
 	player.SpellToMemorize.bSpell = false;
-
-	player.m_cheatSkinButtonClickCount = 0;
-	player.m_cheatQuickGenButtonClickCount = 0;
+	
+	g_characterCreation.resetCheat();
 }
 
 /*!
  * \brief Creates an Average hero
  */
-void ARX_PLAYER_MakeAverageHero()
-{
+void ARX_PLAYER_MakeAverageHero() {
+	
 	ARX_PLAYER_MakeFreshHero();
-
-	player.m_attribute.strength		+= 4;
-	player.m_attribute.mind			+= 4;
-	player.m_attribute.dexterity		+= 4;
-	player.m_attribute.constitution	+= 4;
-
-	player.m_skill.stealth			+= 2;
-	player.m_skill.mecanism			+= 2;
-	player.m_skill.intuition			+= 2;
-	player.m_skill.etheralLink		+= 2;
-	player.m_skill.objectKnowledge	+= 2;
-	player.m_skill.casting			+= 2;
-	player.m_skill.projectile			+= 2;
-	player.m_skill.closeCombat		+= 2;
-	player.m_skill.defense			+= 2;
-
+	
+	player.m_attribute.strength += 4;
+	player.m_attribute.mind += 4;
+	player.m_attribute.dexterity += 4;
+	player.m_attribute.constitution += 4;
+	
+	player.m_skill.stealth += 2;
+	player.m_skill.mecanism += 2;
+	player.m_skill.intuition += 2;
+	player.m_skill.etheralLink += 2;
+	player.m_skill.objectKnowledge += 2;
+	player.m_skill.casting += 2;
+	player.m_skill.projectile += 2;
+	player.m_skill.closeCombat += 2;
+	player.m_skill.defense += 2;
+	
 	player.Attribute_Redistribute = 0;
 	player.Skill_Redistribute = 0;
-
+	
 	player.level = 0;
 	player.xp = 0;
 	player.hunger = 100.f;
-
+	
 	ARX_PLAYER_ComputePlayerStats();
 }
 
@@ -978,12 +976,12 @@ void ARX_PLAYER_Poison(float val) {
  *
  * Updates: life/mana recovery, poison evolution, hunger, invisibility
  */
-void ARX_PLAYER_FrameCheck(PlatformDuration delta)
-{
+void ARX_PLAYER_FrameCheck(PlatformDuration delta) {
+	
 	ARX_PROFILE_FUNC();
 	
-	//	ARX_PLAYER_QuickGeneration();
 	if(delta > 0) {
+		
 		float Framedelay = toMs(delta);
 		
 		UpdateIOInvisibility(entities.player());
@@ -995,8 +993,8 @@ void ARX_PLAYER_FrameCheck(PlatformDuration delta)
 
 			// Check for player hungry sample playing
 			if((player.hunger > 10.f && player.hunger - inc_hunger <= 10.f)
-					|| (player.hunger < 10.f && g_gameTime.now() > LastHungerSample + GameDurationMs(180000)))
-			{
+			   || (player.hunger < 10.f && g_gameTime.now() > LastHungerSample + GameDurationMs(180000))) {
+				
 				LastHungerSample = g_gameTime.now();
 
 				if(!BLOCK_PLAYER_CONTROLS) {
@@ -1179,24 +1177,21 @@ void ARX_PLAYER_LoadHeroAnimsAndMesh(){
 	//todo free
 	io->armormaterial = "leather";
 	loadScript(io->script, g_resources->getFile("graph/obj3d/interactive/player/player.asl"));
-
-	if ((EERIE_OBJECT_GetGroup(io->obj, "head") != ObjVertGroup())
-	        &&	(EERIE_OBJECT_GetGroup(io->obj, "neck") != ObjVertGroup())
-	        &&	(EERIE_OBJECT_GetGroup(io->obj, "chest") != ObjVertGroup())
-	        &&	(EERIE_OBJECT_GetGroup(io->obj, "belt") != ObjVertGroup()))
-	{
+	
+	if(EERIE_OBJECT_GetGroup(io->obj, "head") != ObjVertGroup()
+	   && EERIE_OBJECT_GetGroup(io->obj, "neck") != ObjVertGroup()
+	   && EERIE_OBJECT_GetGroup(io->obj, "chest") != ObjVertGroup()
+	   && EERIE_OBJECT_GetGroup(io->obj, "belt") != ObjVertGroup()) {
 		io->_npcdata->ex_rotate = new EERIE_EXTRA_ROTATE();
-		
 		io->_npcdata->ex_rotate->group_number[0] = EERIE_OBJECT_GetGroup(io->obj, "head");
 		io->_npcdata->ex_rotate->group_number[1] = EERIE_OBJECT_GetGroup(io->obj, "neck");
 		io->_npcdata->ex_rotate->group_number[2] = EERIE_OBJECT_GetGroup(io->obj, "chest");
 		io->_npcdata->ex_rotate->group_number[3] = EERIE_OBJECT_GetGroup(io->obj, "belt");
-		
 		for(size_t n = 0; n < MAX_EXTRA_ROTATE; n++) {
 			io->_npcdata->ex_rotate->group_rotate[n] = Anglef::ZERO;
 		}
 	}
-
+	
 	ARX_INTERACTIVE_RemoveGoreOnIO(entities.player());
 }
 
@@ -1261,7 +1256,7 @@ void ARX_PLAYER_Manage_Visual() {
 	
 	if(!BLOCK_PLAYER_CONTROLS && sp_max) {
 		io->halo.color = Color3f::red;
-		io->halo.flags |= HALO_ACTIVE | HALO_DYNLIGHT;
+		io->halo.flags |= HALO_ACTIVE;
 		io->halo.radius = 20.f;
 		player.lifePool.current += g_framedelay * 0.1f;
 		player.lifePool.current = std::min(player.lifePool.current, player.Full_maxlife);
@@ -1378,21 +1373,17 @@ void ARX_PLAYER_Manage_Visual() {
 		
 		request0_loop = true;
 		
-		if(layer0.cur_anim == alist[ANIM_U_TURN_LEFT]
-		   || layer0.cur_anim == alist[ANIM_U_TURN_LEFT_FIGHT])
-		{
+		if(layer0.cur_anim == alist[ANIM_U_TURN_LEFT] || layer0.cur_anim == alist[ANIM_U_TURN_LEFT_FIGHT]) {
 			layer0.ctime -= PLAYER_ROTATION;
-			
-			if(layer0.ctime < 0)
+			if(layer0.ctime < 0) {
 				layer0.ctime = 0;
-		}
-		else if(layer0.cur_anim == alist[ANIM_U_TURN_RIGHT]
-				 ||	layer0.cur_anim == alist[ANIM_U_TURN_RIGHT_FIGHT])
-		{
+			}
+		} else if(layer0.cur_anim == alist[ANIM_U_TURN_RIGHT]
+		          || layer0.cur_anim == alist[ANIM_U_TURN_RIGHT_FIGHT]) {
 			layer0.ctime += PLAYER_ROTATION;
-			
-			if(layer0.ctime < 0)
+			if(layer0.ctime < 0) {
 				layer0.ctime = 0;
+			}
 		}
 	}
 	
@@ -1471,15 +1462,10 @@ void ARX_PLAYER_Manage_Visual() {
 	   && (layer0.cur_anim == alist[ANIM_WAIT] || layer0.cur_anim == alist[ANIM_WAIT_SHORT])
 	   && !(player.m_currentMovement & PLAYER_CROUCH)
 	) {
-		if ((player.m_currentMovement & PLAYER_LEAN_LEFT)
-				&&	(player.m_currentMovement & PLAYER_LEAN_RIGHT))
-		{
-		} else {
+		if(!(player.m_currentMovement & PLAYER_LEAN_LEFT) || !(player.m_currentMovement & PLAYER_LEAN_RIGHT)) {
 			if(player.m_currentMovement & PLAYER_LEAN_LEFT) {
 				request3_anim = alist[ANIM_LEAN_LEFT];
-				//ChangeMA_Loop=0;
 			}
-			
 			if(player.m_currentMovement & PLAYER_LEAN_RIGHT) {
 				request3_anim = alist[ANIM_LEAN_RIGHT];
 			}
@@ -1495,13 +1481,10 @@ void ARX_PLAYER_Manage_Visual() {
 	}
 	
 	if((player.m_currentMovement & PLAYER_CROUCH) && !(player.m_lastMovement & PLAYER_CROUCH)
-			&& !player.levitate)
-	{
+	   && !player.levitate) {
 		request0_anim = alist[ANIM_CROUCH_START];
 		request0_loop = false;
-	}
-	else if(!(player.m_currentMovement & PLAYER_CROUCH) && (player.m_lastMovement & PLAYER_CROUCH))
-	{
+	} else if(!(player.m_currentMovement & PLAYER_CROUCH) && (player.m_lastMovement & PLAYER_CROUCH)) {
 		request0_anim = alist[ANIM_CROUCH_END];
 		request0_loop = false;
 	} else if(player.m_currentMovement & PLAYER_CROUCH) {
@@ -1830,9 +1813,9 @@ static bool Valid_Jump_Pos() {
 	}
 	
 	long hum = 0;
-	for(float vv = 0; vv < 360.f; vv += 20.f) {
+	for(size_t vv = 0; vv < 360; vv += 20) {
 		tmpp.origin = player.basePosition();
-		tmpp.origin += angleToVectorXZ(vv) * 20.f;
+		tmpp.origin += angleToVectorXZ(float(vv)) * 20.f;
 		
 		tmpp.radius = player.physics.cyl.radius;
 		float anything = CheckAnythingInCylinder(tmpp, entities.player(), CFLAG_JUST_TEST);
@@ -1924,8 +1907,7 @@ void PlayerMovementIterate(float DeltaTime) {
 				float old = player.physics.cyl.height;
 				player.physics.cyl.height = player.baseHeight();
 				player.physics.cyl.origin = player.basePosition();
-				float anything = CheckAnythingInCylinder(player.physics.cyl, entities.player(),
-														 CFLAG_JUST_TEST);
+				float anything = CheckAnythingInCylinder(player.physics.cyl, entities.player(), CFLAG_JUST_TEST);
 				if(anything < 0.f) {
 					player.m_currentMovement |= PLAYER_CROUCH;
 					player.physics.cyl.height = old;
@@ -2267,16 +2249,13 @@ void PlayerMovementIterate(float DeltaTime) {
 			bool test;
 			float PLAYER_CYLINDER_STEP = 40.f;
 			if(player.climbing) {
-				test = ARX_COLLISION_Move_Cylinder(&player.physics, entities.player(),
-				                                   PLAYER_CYLINDER_STEP,
-												   CFLAG_EASY_SLIDING | CFLAG_CLIMBING | CFLAG_PLAYER);
-				
+				test = ARX_COLLISION_Move_Cylinder(&player.physics, entities.player(), PLAYER_CYLINDER_STEP,
+				                                   CFLAG_EASY_SLIDING | CFLAG_CLIMBING | CFLAG_PLAYER);
 				if(!COLLIDED_CLIMB_POLY) {
 					player.climbing = false;
 				}
 			} else {
-				test = ARX_COLLISION_Move_Cylinder(&player.physics, entities.player(),
-				                                   PLAYER_CYLINDER_STEP,
+				test = ARX_COLLISION_Move_Cylinder(&player.physics, entities.player(), PLAYER_CYLINDER_STEP,
 				                                   levitate | CFLAG_EASY_SLIDING | CFLAG_PLAYER);
 				
 				if(!test && !LAST_FIRM_GROUND && !TRUE_FIRM_GROUND) {
@@ -2457,8 +2436,7 @@ void ARX_PLAYER_Start_New_Quest() {
 	
 	LogInfo << "Starting a new playthrough";
 	
-	player.m_cheatSkinButtonClickCount = 0;
-	player.m_cheatQuickGenButtonClickCount = 0;
+	g_characterCreation.resetCheat();
 	EERIE_PATHFINDER_Clear();
 	EERIE_PATHFINDER_Release();
 	ARX_PLAYER_MakeFreshHero();
@@ -2481,15 +2459,8 @@ void ARX_PLAYER_AddBag() {
 }
 
 bool ARX_PLAYER_CanStealItem(Entity * _io) {
-
-	if(_io->_itemdata->stealvalue > 0
-	   && player.m_skillFull.stealth >= _io->_itemdata->stealvalue
-	   && _io->_itemdata->stealvalue < 100.f
-	) {
-		return true;
-	}
-
-	return false;
+	return (_io->_itemdata->stealvalue > 0 && player.m_skillFull.stealth >= _io->_itemdata->stealvalue
+	        && _io->_itemdata->stealvalue < 100.f);
 }
 
 void ARX_PLAYER_Rune_Add_All() {
@@ -2523,8 +2494,6 @@ void ARX_PLAYER_Invulnerability(long flag) {
 	else
 		player.playerflags &= ~PLAYERFLAGS_INVULNERABILITY;
 }
-
-extern Entity * FlyingOverIO;
 
 void ARX_GAME_Reset() {
 	arx_assert(entities.player());
@@ -2700,7 +2669,7 @@ void ARX_GAME_Reset() {
 	SecondaryInventory = NULL;
 	TSecondaryInventory = NULL;
 	MasterCamera.exist = 0;
-	CHANGE_LEVEL_ICON = -1;
+	CHANGE_LEVEL_ICON = NoChangeLevel;
 	
 	// Kill Script Loaded IO
 	CleanScriptLoadedIO();

@@ -68,6 +68,7 @@ ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
 #include "animation/Intro.h"
 
 #include "cinematic/Cinematic.h"
+#include "cinematic/CinematicLoad.h"
 #include "cinematic/CinematicKeyframer.h"
 
 #include "core/Application.h"
@@ -78,6 +79,7 @@ ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
 #include "core/GameTime.h"
 #include "core/Version.h"
 
+#include "game/Camera.h"
 #include "game/Damage.h"
 #include "game/EntityManager.h"
 #include "game/Equipment.h"
@@ -91,15 +93,6 @@ ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
 #include "game/spell/FlyingEye.h"
 #include "game/spell/Cheat.h"
 #include "game/effect/Quake.h"
-
-#include "gui/Hud.h"
-#include "gui/LoadLevelScreen.h"
-#include "gui/Menu.h"
-#include "gui/MenuWidgets.h"
-#include "gui/Speech.h"
-#include "gui/MiniMap.h"
-#include "gui/TextManager.h"
-
 #include "graphics/BaseGraphicsTypes.h"
 #include "graphics/Draw.h"
 #include "graphics/DrawLine.h"
@@ -122,8 +115,15 @@ ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
 #include "graphics/texture/TextureStage.h"
 
 #include "gui/Cursor.h"
+#include "gui/Hud.h"
 #include "gui/Interface.h"
+#include "gui/LoadLevelScreen.h"
+#include "gui/Menu.h"
+#include "gui/MenuWidgets.h"
+#include "gui/Speech.h"
+#include "gui/MiniMap.h"
 #include "gui/Text.h"
+#include "gui/TextManager.h"
 
 #include "input/Input.h"
 #include "input/Keyboard.h"
@@ -132,7 +132,6 @@ ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
 #include "io/fs/SystemPaths.h"
 #include "io/resource/ResourcePath.h"
 #include "io/resource/PakReader.h"
-#include "cinematic/CinematicLoad.h"
 #include "io/Screenshot.h"
 #include "io/log/Logger.h"
 
@@ -165,27 +164,25 @@ class TextManager;
 
 Image savegame_thumbnail;
 
-extern TextManager	*pTextManage;
-
-extern long		DONT_WANT_PLAYER_INZONE;
+extern long DONT_WANT_PLAYER_INZONE;
 
 //-----------------------------------------------------------------------------
 
-ParticleManager	*pParticleManager = NULL;
+ParticleManager * pParticleManager = NULL;
 
-TextureContainer *	GoldCoinsTC[MAX_GOLD_COINS_VISUALS]; // Gold Coins Icons
+TextureContainer * GoldCoinsTC[MAX_GOLD_COINS_VISUALS]; // Gold Coins Icons
 
 Vec2s DANAEMouse;
 Vec3f g_moveto;
 Vec3f Mscenepos;
 Vec3f lastteleport;
 EERIE_3DOBJ * GoldCoinsObj[MAX_GOLD_COINS_VISUALS];// 3D Objects For Gold Coins
-EERIE_3DOBJ	* arrowobj=NULL;			// 3D Object for arrows
-EERIE_3DOBJ * cameraobj=NULL;			// Camera 3D Object		// NEEDTO: Remove for Final
-EERIE_3DOBJ * markerobj=NULL;			// Marker 3D Object		// NEEDTO: Remove for Final
+EERIE_3DOBJ * arrowobj = NULL; // 3D Object for arrows
+EERIE_3DOBJ * cameraobj = NULL; // Camera 3D Object // NEEDTO: Remove for Final
+EERIE_3DOBJ * markerobj = NULL; // Marker 3D Object // NEEDTO: Remove for Final
 
 Vec2s STARTDRAG;
-Entity * COMBINE=NULL;
+Entity * COMBINE = NULL;
 
 // START - Information for Player Teleport between/in Levels-------------------------------------
 std::string TELEPORT_TO_LEVEL;
@@ -202,7 +199,7 @@ Rect g_size(640, 480);
 Vec2f g_sizeRatio(1.f, 1.f);
 
 bool REQUEST_SPEECH_SKIP = false;
-long CURRENTLEVEL		= -1;
+long CURRENTLEVEL = -1;
 bool DONT_ERASE_PLAYER = false;
 bool FASTmse = false;
 
@@ -212,7 +209,7 @@ bool FASTmse = false;
 // Flag used to Launch Moulinex
 bool LOADEDD = false; // Is a Level Loaded ?
 
-long CHANGE_LEVEL_ICON=-1;
+ChangeLevelIcon CHANGE_LEVEL_ICON = NoChangeLevel;
 
 bool g_cursorOverBook = false;
 //-----------------------------------------------------------------------------
@@ -224,8 +221,6 @@ bool START_NEW_QUEST = false;
 static long LAST_WEAPON_TYPE = -1;
 
 float PULSATE;
-
-extern EERIE_CAMERA * ACTIVECAM;
 
 
 bool g_debugToggles[10];
@@ -257,15 +252,6 @@ bool AdjustUI() {
 	MenuReInitAll();
 	
 	return true;
-}
-
-void DanaeRestoreFullScreen() {
-	
-	MenuReInitAll();
-	
-	AdjustUI();
-
-	LoadScreen();
 }
 
 void runGame() {
@@ -359,7 +345,7 @@ void SetEditMode() {
 bool GMOD_RESET = true;
 
 Vec3f LastValidPlayerPos;
-Vec3f	WILL_RESTORE_PLAYER_POSITION;
+Vec3f WILL_RESTORE_PLAYER_POSITION;
 bool WILL_RESTORE_PLAYER_POSITION_FLAG = false;
 
 void levelInit() {
@@ -369,7 +355,7 @@ void levelInit() {
 	LogDebug("Initializing level ...");
 	
 	ARX_PARTICLES_FirstInit();
-	RenderBatcher::getInstance().reset();
+	g_renderBatcher.reset();
 	
 	progressBarAdvance(2.f);
 	LoadLevelScreen();
@@ -526,15 +512,13 @@ void levelInit() {
 	LoadLevelScreen();
 	LoadLevelScreen(-2);
 	
-	if (	(!CheckInPoly(player.pos))
-		&&	(LastValidPlayerPos.x!=0.f)
-		&&	(LastValidPlayerPos.y!=0.f)
-		&&	(LastValidPlayerPos.z!=0.f)) {
+	if(!CheckInPoly(player.pos) && LastValidPlayerPos.x != 0.f
+	   && LastValidPlayerPos.y != 0.f && LastValidPlayerPos.z != 0.f) {
 		player.pos = LastValidPlayerPos;
 	}
-
+	
 	LastValidPlayerPos = player.pos;
-
+	
 	g_platformTime.updateFrame();
 	
 	g_gameTime.resume(GameTime::PauseInitial | GameTime::PauseMenu);
@@ -545,7 +529,7 @@ void levelInit() {
 void ManageNONCombatModeAnimations() {
 	arx_assert(entities.player());
 	
-	Entity *io = entities.player();
+	Entity * io = entities.player();
 
 	AnimLayer & layer3 = io->animlayer[3];
 	ANIM_HANDLE ** alist=io->anims;
@@ -578,11 +562,7 @@ static bool StrikeAimtime() {
 	
 	player.m_strikeAimRatio = glm::clamp(player.m_aimTime / player.Full_AimTime, 0.1f, 1.0f);
 	
-	if(player.m_strikeAimRatio > 0.8f) {
-		return true;
-	}
-	
-	return false;
+	return (player.m_strikeAimRatio > 0.8f);
 }
 
 static void strikeSpeak(Entity * io) {
@@ -656,10 +636,9 @@ void ManageCombatModeAnimations() {
 						player.m_weaponBlocked = AnimationDuration::ofRaw(-1);
 					} else if( layer1.ctime > layer1.cur_anim->anims[layer1.altidx_cur]->anim_time * 0.2f
 					        && layer1.ctime < layer1.cur_anim->anims[layer1.altidx_cur]->anim_time * 0.8f
-							&& player.m_weaponBlocked == AnimationDuration::ofRaw(-1)
-					) {
-						ActionPoint id = ActionPoint();
+					        && player.m_weaponBlocked == AnimationDuration::ofRaw(-1)) {
 						
+						ActionPoint id = ActionPoint();
 						if(layer1.cur_anim == alist[ANIM_BARE_STRIKE_LEFT]) {
 							id = io->obj->fastaccess.left_attach;
 						} else { // Strike Right
@@ -971,35 +950,34 @@ void ManageCombatModeAnimationsEND() {
 	AnimLayer & layer3 = io->animlayer[3];
 	
 	ANIM_HANDLE ** alist = io->anims;
-
+	
 	if(layer1.cur_anim
-		&&(		(layer1.cur_anim == alist[ANIM_BARE_READY])
-			||	(layer1.cur_anim == alist[ANIM_DAGGER_READY_PART_2])
-			||	(layer1.cur_anim == alist[ANIM_DAGGER_READY_PART_1])
-			||	(layer1.cur_anim == alist[ANIM_1H_READY_PART_2])
-			||	(layer1.cur_anim == alist[ANIM_1H_READY_PART_1])
-			||	(layer1.cur_anim == alist[ANIM_2H_READY_PART_2])
-			||	(layer1.cur_anim == alist[ANIM_2H_READY_PART_1])
-			||	(layer1.cur_anim == alist[ANIM_MISSILE_READY_PART_1])
-			||	(layer1.cur_anim == alist[ANIM_MISSILE_READY_PART_2])	)
-	) {
+	   && (layer1.cur_anim == alist[ANIM_BARE_READY]
+	       || layer1.cur_anim == alist[ANIM_DAGGER_READY_PART_2]
+	       || layer1.cur_anim == alist[ANIM_DAGGER_READY_PART_1]
+	       || layer1.cur_anim == alist[ANIM_1H_READY_PART_2]
+	       || layer1.cur_anim == alist[ANIM_1H_READY_PART_1]
+	       || layer1.cur_anim == alist[ANIM_2H_READY_PART_2]
+	       || layer1.cur_anim == alist[ANIM_2H_READY_PART_1]
+	       || layer1.cur_anim == alist[ANIM_MISSILE_READY_PART_1]
+	       || layer1.cur_anim == alist[ANIM_MISSILE_READY_PART_2])) {
 		player.m_aimTime = PlatformDuration::ofRaw(1);
 	}
-
+	
 	if(layer1.flags & EA_ANIMEND) {
+		
 		WeaponType weapontype = ARX_EQUIPMENT_GetPlayerWeaponType();
-
-		if(layer1.cur_anim &&
-			(	(layer1.cur_anim == io->anims[ANIM_BARE_UNREADY])
-			||	(layer1.cur_anim == io->anims[ANIM_DAGGER_UNREADY_PART_2])
-			||	(layer1.cur_anim == io->anims[ANIM_1H_UNREADY_PART_2])
-			||	(layer1.cur_anim == io->anims[ANIM_2H_UNREADY_PART_2])
-			||	(layer1.cur_anim == io->anims[ANIM_MISSILE_UNREADY_PART_2])	)
-		) {
+		
+		if(layer1.cur_anim
+		   && (layer1.cur_anim == io->anims[ANIM_BARE_UNREADY]
+		       || layer1.cur_anim == io->anims[ANIM_DAGGER_UNREADY_PART_2]
+		       || layer1.cur_anim == io->anims[ANIM_1H_UNREADY_PART_2]
+		       || layer1.cur_anim == io->anims[ANIM_2H_UNREADY_PART_2]
+		       || layer1.cur_anim == io->anims[ANIM_MISSILE_UNREADY_PART_2])) {
 			AcquireLastAnim(io);
 			layer1.cur_anim = NULL;
 		}
-
+		
 		switch(weapontype) {
 			case WEAPON_BARE: {
 				// Is Weapon Ready ? In this case go to Fight Wait anim

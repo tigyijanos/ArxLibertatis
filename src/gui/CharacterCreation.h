@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2016 Arx Libertatis Team (see the AUTHORS file)
+ * Copyright 2017 Arx Libertatis Team (see the AUTHORS file)
  *
  * This file is part of Arx Libertatis.
  *
@@ -17,27 +17,35 @@
  * along with Arx Libertatis.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef ARX_GRAPHICS_EFFECTS_FADE_H
-#define ARX_GRAPHICS_EFFECTS_FADE_H
+#ifndef ARX_GUI_CHARACTERCREATION_H
+#define ARX_GUI_CHARACTERCREATION_H
 
-#include "core/TimeTypes.h"
-#include "graphics/Color.h"
+#include <string>
 
-extern long FADEDIR;
-extern float LAST_FADEVALUE;
+#include "platform/Platform.h"
 
-enum FadeType {
-	FadeType_In,
-	FadeType_Out
+class TextureContainer;
+
+struct CharacterCreation {
+	
+	CharacterCreation();
+	
+	void loadData();
+	void freeData();
+	
+	void resetCheat();
+	void render();
+
+private:
+	TextureContainer * BookBackground;
+	std::string str_button_quickgen;
+	std::string str_button_skin;
+	std::string str_button_done;
+	
+	s8 m_cheatSkinButtonClickCount;
+	char m_cheatQuickGenButtonClickCount;
 };
 
-void fadeReset();
+extern CharacterCreation g_characterCreation;
 
-void fadeSetColor(Color3f color);
-
-// TODO should this really be in ingame time ?
-void fadeRequestStart(FadeType type, PlatformDuration duration);
-
-void ManageFade();
-
-#endif // ARX_GRAPHICS_EFFECTS_FADE_H
+#endif // ARX_GUI_CHARACTERCREATION_H

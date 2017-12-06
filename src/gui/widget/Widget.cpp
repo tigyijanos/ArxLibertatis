@@ -26,7 +26,6 @@
 
 Widget::Widget()
 	: m_rect(0, 0, 0, 0)
-	, pRef(NULL)
 	, m_id(BUTTON_INVALID)
 	, m_savegame(0)
 	, enabled(true)
@@ -39,26 +38,11 @@ Widget::Widget()
 }
 
 extern TextWidget * pMenuElementApply;
-extern TextWidget * pLoadConfirm;
-extern TextWidget * pDeleteConfirm;
-extern TextWidget * pDeleteButton;
 
 Widget::~Widget() {
 
 	if(this == pMenuElementApply) {
 		pMenuElementApply = NULL;
-	}
-
-	if(this == pLoadConfirm) {
-		pLoadConfirm = NULL;
-	}
-
-	if(this == pDeleteConfirm) {
-		pDeleteConfirm = NULL;
-	}
-
-	if(this == pDeleteButton) {
-		pDeleteButton = NULL;
 	}
 }
 
@@ -76,21 +60,17 @@ void Widget::SetPos(Vec2f pos) {
 	m_rect.bottom = pos.y + size.y;
 }
 
-Widget * Widget::IsMouseOver(const Vec2f & mousePos) const {
+Widget * Widget::IsMouseOver(const Vec2f & mousePos) {
 	
 	if(   mousePos.x >= m_rect.left
 	   && mousePos.y >= m_rect.top
 	   && mousePos.x <= m_rect.right
 	   && mousePos.y <= m_rect.bottom
 	) {
-		return pRef;
+		return this;
 	}
 
 	return NULL;
-}
-
-Widget *Widget::GetZoneWithID(MenuButton zoneId) {
-	return (m_id == zoneId) ? this : NULL;
 }
 
 void Widget::SetShortCut(int _iShortCut) {

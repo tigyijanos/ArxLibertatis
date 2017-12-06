@@ -60,7 +60,7 @@ struct RenderMaterial {
 	void resetTexture() { m_texture = NULL; }
 	void setTexture(Texture * tex) { m_texture = tex; }
 	void setTexture(TextureContainer * texContainer) {
-		m_texture = texContainer ? (Texture *)texContainer->m_pTexture : NULL;
+		m_texture = texContainer ? texContainer->m_pTexture : NULL;
 	}
 
 	bool getDepthTest() const { return m_depthTest; }
@@ -108,8 +108,6 @@ public:
 
 	//! Free all memory pools
 	void reset();
-
-	static RenderBatcher& getInstance();
 	
 private:
 	
@@ -119,5 +117,7 @@ private:
 	Batches m_BatchedSprites;
 	
 };
+
+extern RenderBatcher g_renderBatcher;
 
 #endif // ARX_GRAPHICS_RENDERBATCHER_H

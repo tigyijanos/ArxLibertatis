@@ -32,12 +32,6 @@ enum MenuButton {
 	BUTTON_INVALID = -1,
 
 	BUTTON_MENUEDITQUEST_LOAD = 1,
-	BUTTON_MENUEDITQUEST_LOAD_CONFIRM,
-	BUTTON_MENUEDITQUEST_SAVE,
-	BUTTON_MENUEDITQUEST_DELETE,
-	BUTTON_MENUEDITQUEST_DELETE_CONFIRM,
-
-	BUTTON_MENUOPTIONS_CONTROLS_CUST_DEFAULT,
 
 	BUTTON_MENUEDITQUEST_SAVEINFO,
 };
@@ -61,23 +55,23 @@ enum ELEMPOS
 
 enum MENUSTATE
 {
-	MAIN,
+	Page_None,
 	RESUME_GAME,
-	NEW_QUEST,
-	EDIT_QUEST,
-	EDIT_QUEST_LOAD,
-	EDIT_QUEST_SAVE,
-	EDIT_QUEST_SAVE_CONFIRM,
-	OPTIONS,
-	OPTIONS_VIDEO,
-	OPTIONS_RENDER,
-	OPTIONS_INTERFACE,
-	OPTIONS_AUDIO,
-	OPTIONS_INPUT,
-	OPTIONS_INPUT_CUSTOMIZE_KEYS_1,
-	OPTIONS_INPUT_CUSTOMIZE_KEYS_2,
+	Page_NewQuestConfirm,
+	Page_LoadOrSave,
+	Page_Load,
+	Page_Save,
+	Page_SaveConfirm,
+	Page_Options,
+	Page_OptionsVideo,
+	Page_OptionsRender,
+	Page_OptionsInterface,
+	Page_OptionsAudio,
+	Page_OptionsInput,
+	Page_OptionsInputCustomizeKeys1,
+	Page_OptionsInputCustomizeKeys2,
 	CREDITS,
-	QUIT,
+	Page_QuitConfirm,
 	NOP
 };
 
@@ -94,15 +88,14 @@ class Widget : private boost::noncopyable {
 	
 public:
 	Rectf m_rect;
-	Widget *	pRef;
 	
 	MenuButton m_id;
 	
 	SavegameHandle m_savegame;
 	
-	ELEMPOS     ePlace;			//placement de la zone
-	ELEMSTATE   eState;			//etat de l'element en cours
-	MENUSTATE   m_targetMenu;		//etat de retour de l'element
+	ELEMPOS     ePlace;
+	ELEMSTATE   eState;
+	MENUSTATE   m_targetMenu;
 	InputKeyId  m_shortcut;
 	
 public:
@@ -114,8 +107,7 @@ public:
 	virtual void Render() = 0;
 	virtual void RenderMouseOver() { }
 	virtual void EmptyFunction() { }
-	virtual bool OnMouseDoubleClick() { return false; }
-	virtual Widget * GetZoneWithID(MenuButton zoneId);
+	virtual void OnMouseDoubleClick() { }
 	
 	void SetShortCut(int _iShortCut);
 	
@@ -129,7 +121,7 @@ public:
 	
 	bool getCheck();
 	
-	virtual Widget * IsMouseOver(const Vec2f & mousePos) const;
+	virtual Widget * IsMouseOver(const Vec2f & mousePos);
 	
 	virtual WidgetType type() const = 0;
 	

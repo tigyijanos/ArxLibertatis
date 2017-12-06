@@ -32,7 +32,6 @@ ButtonWidget::ButtonWidget(const Vec2f & pos, const Vec2f & size, const char * t
 	m_pos = pos;
 	m_size = size;
 	
-	pRef = this; //TODO remove this
 	m_id = BUTTON_INVALID; //TODO remove this
 	
 	m_texture = TextureContainer::Load(texturePath);
@@ -75,11 +74,7 @@ void ButtonWidget::Render() {
 	EERIEDrawBitmap(m_rect, 0, m_texture, color);
 }
 
-extern MenuCursor * pMenuCursor;
-
 void ButtonWidget::RenderMouseOver() {
-
-	pMenuCursor->SetMouseOver();
 	
 	const Vec2f cursor = Vec2f(GInput->getMousePosition());
 	if(m_rect.contains(cursor)) {

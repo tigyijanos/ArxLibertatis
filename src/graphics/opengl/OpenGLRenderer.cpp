@@ -38,7 +38,7 @@
 #include "core/Config.h"
 #include "gui/Credits.h"
 #include "graphics/opengl/GLDebug.h"
-#include "graphics/opengl/GLTexture2D.h"
+#include "graphics/opengl/GLTexture.h"
 #include "graphics/opengl/GLTextureStage.h"
 #include "graphics/opengl/GLVertexBuffer.h"
 #include "io/log/Logger.h"
@@ -67,6 +67,7 @@ OpenGLRenderer::OpenGLRenderer()
 	, m_hasDrawElementsBaseVertex(false)
 	, m_hasClearDepthf(false)
 	, m_hasVertexFogCoordinate(false)
+	, m_hasSampleShading(false)
 { }
 
 OpenGLRenderer::~OpenGLRenderer() {
@@ -76,9 +77,6 @@ OpenGLRenderer::~OpenGLRenderer() {
 	}
 	
 	// TODO textures must be destructed before OpenGLRenderer or not at all
-	//for(TextureList::iterator it = textures.begin(); it != textures.end(); ++it) {
-	//	LogWarning << "Texture still loaded: " << it->getFileName();
-	//}
 	
 }
 
@@ -344,6 +342,12 @@ void OpenGLRenderer::reinit() {
 	// Introduced in OpenGL 1.4, no extension available for OpenGL ES
 	m_hasVertexFogCoordinate = !isES;
 	
+	if(isES) {
+		m_hasSampleShading = ARX_HAVE_GLES_VER(3, 2) || ARX_HAVE_GLES_EXT(OES_sample_shading);
+	} else {
+		m_hasSampleShading = ARX_HAVE_GL_VER(4, 0) || ARX_HAVE_GL_EXT(ARB_sample_shading);
+	}
+	
 	// Synchronize GL state cache
 	
 	m_MSAALevel = 0;
@@ -378,7 +382,11 @@ void OpenGLRenderer::reinit() {
 	m_glstate.setFog(false);
 	
 	glAlphaFunc(GL_GREATER, 0.5f);
-	glMinSampleShading(1.f);
+	#ifdef GL_VERSION_4_0
+	if(hasSampleShading()) {
+		glMinSampleShading(1.f);
+	}
+	#endif
 	m_glstate.setAlphaCutout(false);
 	
 	glEnable(GL_DEPTH_TEST);
@@ -524,26 +532,26 @@ void OpenGLRenderer::GetProjectionMatrix(glm::mat4x4 & matProj) const {
 
 void OpenGLRenderer::ReleaseAllTextures() {
 	for(TextureList::iterator it = textures.begin(); it != textures.end(); ++it) {
-		it->Destroy();
+		it->destroy();
 	}
 }
 
 void OpenGLRenderer::RestoreAllTextures() {
 	for(TextureList::iterator it = textures.begin(); it != textures.end(); ++it) {
-		it->Restore();
+		it->restore();
 	}
 }
 
 void OpenGLRenderer::reloadColorKeyTextures() {
 	for(TextureList::iterator it = textures.begin(); it != textures.end(); ++it) {
 		if(it->hasColorKey()) {
-			it->Restore();
+			it->restore();
 		}
 	}
 }
 
-Texture2D * OpenGLRenderer::CreateTexture2D() {
-	GLTexture2D * texture = new GLTexture2D(this);
+Texture * OpenGLRenderer::createTexture() {
+	GLTexture * texture = new GLTexture(this);
 	textures.push_back(*texture);
 	return texture;
 }
@@ -705,6 +713,17 @@ void OpenGLRenderer::setMaxAnisotropy(float value) {
 	}
 }
 
+Renderer::AlphaCutoutAntialising OpenGLRenderer::getMaxSupportedAlphaCutoutAntialiasing() const {
+	
+	#ifdef GL_VERSION_4_0
+	if(hasSampleShading()) {
+		return CrispAlphaCutoutAA;
+	}
+	#endif
+	
+	return FuzzyAlphaCutoutAA;
+}
+
 template <typename Vertex>
 static VertexBuffer<Vertex> * createVertexBufferImpl(OpenGLRenderer * renderer,
                                                      size_t capacity,
@@ -822,11 +841,11 @@ bool OpenGLRenderer::getSnapshot(Image & image) {
 	
 	Vec2i size = mainApp->getWindow()->getSize();
 	
-	image.Create(size.x, size.y, Image::Format_R8G8B8);
+	image.create(size_t(size.x), size_t(size.y), Image::Format_R8G8B8);
 	
-	glReadPixels(0, 0, size.x, size.y, GL_RGB, GL_UNSIGNED_BYTE, image.GetData());
+	glReadPixels(0, 0, size.x, size.y, GL_RGB, GL_UNSIGNED_BYTE, image.getData());
 	
-	image.FlipY();
+	image.flipY();
 	
 	return true;
 }
@@ -838,7 +857,7 @@ bool OpenGLRenderer::getSnapshot(Image & image, size_t width, size_t height) {
 	Image fullsize;
 	getSnapshot(fullsize);
 	
-	image.ResizeFrom(fullsize, width, height, true);
+	image.resizeFrom(fullsize, width, height);
 	
 	return true;
 }
@@ -893,7 +912,7 @@ void OpenGLRenderer::flushState() {
 			}
 		}
 		
-		bool useA2C = m_hasMSAA && config.video.alphaCutoutAntialiasing == 1;
+		bool useA2C = m_hasMSAA && config.video.alphaCutoutAntialiasing == int(FuzzyAlphaCutoutAA);
 		if(m_glstate.getAlphaCutout() != m_state.getAlphaCutout()
 		   || (useA2C && m_state.getAlphaCutout() && m_glstate.isBlendEnabled() != m_state.isBlendEnabled())) {
 			
@@ -911,9 +930,12 @@ void OpenGLRenderer::flushState() {
 				if(disableA2C) {
 					glDisable(GL_SAMPLE_ALPHA_TO_COVERAGE);
 				} else if(!m_state.getAlphaCutout() || enableA2C) {
-					if(m_hasMSAA && config.video.alphaCutoutAntialiasing == 2) {
+					#ifdef GL_VERSION_4_0
+					if(hasSampleShading() && m_hasMSAA
+					   && config.video.alphaCutoutAntialiasing == int(CrispAlphaCutoutAA)) {
 						glDisable(GL_SAMPLE_SHADING);
 					}
+					#endif
 					glDisable(GL_ALPHA_TEST);
 				}
 			}
@@ -922,9 +944,12 @@ void OpenGLRenderer::flushState() {
 					glEnable(GL_SAMPLE_ALPHA_TO_COVERAGE);
 				} else if(!m_glstate.getAlphaCutout() || disableA2C) {
 					glEnable(GL_ALPHA_TEST);
-					if(m_hasMSAA && config.video.alphaCutoutAntialiasing == 2) {
+					#ifdef GL_VERSION_4_0
+					if(hasSampleShading() && m_hasMSAA
+					   && config.video.alphaCutoutAntialiasing == int(CrispAlphaCutoutAA)) {
 						glEnable(GL_SAMPLE_SHADING);
 					}
+					#endif
 				}
 			}
 		}

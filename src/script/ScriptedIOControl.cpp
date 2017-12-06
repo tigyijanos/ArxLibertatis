@@ -429,12 +429,7 @@ class IfVisibleCommand : public Command {
 		float aa = getAngle(io->pos.x, io->pos.z, ioo->pos.x, ioo->pos.z);
 		aa = MAKEANGLE(glm::degrees(aa));
 		
-		if((aa < ab + 90.f) && (aa > ab - 90.f)) {
-			//font
-			return true;
-		}
-		
-		return false;
+		return (aa < ab + 90.f && aa > ab - 90.f);
 	}
 	
 public:
@@ -542,12 +537,12 @@ public:
 				TELEPORT_TO_POSITION = target;
 				
 				if(angle == -1) {
-					TELEPORT_TO_ANGLE	=	static_cast<long>(player.angle.getYaw());
+					TELEPORT_TO_ANGLE = static_cast<long>(player.angle.getYaw());
 				} else {
 					TELEPORT_TO_ANGLE = angle;
 				}
 				
-				CHANGE_LEVEL_ICON =  confirm ? 1 : 200;
+				CHANGE_LEVEL_ICON = confirm ? ConfirmChangeLevel : ChangeLevelNow;
 				
 				DebugScript(' ' << options << ' ' << angle << ' ' << level << ' ' << target);
 				

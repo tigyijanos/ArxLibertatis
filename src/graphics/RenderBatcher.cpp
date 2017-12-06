@@ -28,6 +28,9 @@
 
 #include "platform/profiler/Profiler.h"
 
+
+RenderBatcher g_renderBatcher;
+
 RenderBatcher::~RenderBatcher() {
 	reset();
 }
@@ -86,11 +89,6 @@ void RenderBatcher::reset() {
 	m_BatchedSprites.clear();
 }
 
-RenderBatcher& RenderBatcher::getInstance() {
-	static RenderBatcher renderBatcher;
-	return renderBatcher;
-}
-
 RenderMaterial::RenderMaterial()
 	: m_texture(0)
 	, m_depthTest(false)
@@ -142,7 +140,7 @@ bool RenderMaterial::operator<(const RenderMaterial & other) const {
 }
 
 RenderState RenderMaterial::apply() const {
-		
+	
 	if(m_texture) {
 		GRenderer->SetTexture(0, m_texture);
 	} else {
@@ -150,6 +148,8 @@ RenderState RenderMaterial::apply() const {
 	}
 	
 	RenderState state = render3D();
+	
+	state.setAlphaCutout(m_texture && m_texture->hasAlpha());
 	
 	GRenderer->GetTextureStage(0)->setWrapMode(m_wrapMode);
 	state.setDepthOffset(m_depthBias);
@@ -162,7 +162,6 @@ RenderState RenderMaterial::apply() const {
 	
 	if(m_blendType == Opaque) {
 		state.disableBlend();
-		state.setAlphaCutout(m_texture && m_texture->hasAlpha());
 	} else {
 		switch(m_blendType) {
 		

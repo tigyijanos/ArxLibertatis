@@ -68,17 +68,19 @@ struct FLARETC
 static FLARETC g_magicFlareTextures;
 
 void MagicFlareLoadTextures() {
-
-	g_magicFlareTextures.lumignon=	TextureContainer::LoadUI("graph/particles/lumignon");
-	g_magicFlareTextures.lumignon2=	TextureContainer::LoadUI("graph/particles/lumignon2");
-	g_magicFlareTextures.plasm=		TextureContainer::LoadUI("graph/particles/plasm");
-
+	
+	TextureContainer::TCFlags flags = TextureContainer::NoColorKey;
+	
+	g_magicFlareTextures.lumignon = TextureContainer::LoadUI("graph/particles/lumignon", flags);
+	g_magicFlareTextures.lumignon2 = TextureContainer::LoadUI("graph/particles/lumignon2", flags);
+	g_magicFlareTextures.plasm = TextureContainer::LoadUI("graph/particles/plasm", flags);
+	
 	char temp[256];
-
 	for(long i = 1; i < 10; i++) {
-		sprintf(temp,"graph/particles/shine%ld", i);
-		g_magicFlareTextures.shine[i]=TextureContainer::LoadUI(temp);
+		sprintf(temp, "graph/particles/shine%ld", i);
+		g_magicFlareTextures.shine[i] = TextureContainer::LoadUI(temp, flags);
 	}
+	
 }
 
 static short shinum = 1;
@@ -167,12 +169,9 @@ void AddFlare(const Vec2f & pos, float sm, short typ, Entity * io, bool bookDraw
 	MagicFlare & flare = g_magicFlares[i];
 	flare.exist = 1;
 	g_magicFlaresCount++;
-
-	if(!bookDraw)
-		flare.bDrawBitmap = 0;
-	else
-		flare.bDrawBitmap = 1;
-
+	
+	flare.bDrawBitmap = bookDraw;
+	
 	flare.io = io;
 	if(io) {
 		flare.flags = 1;

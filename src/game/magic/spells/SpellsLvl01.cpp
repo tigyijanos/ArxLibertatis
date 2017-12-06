@@ -304,16 +304,14 @@ void MagicMissileSpell::Update() {
 		m_missiles[i]->Update(g_gameTime.lastFrameDuration());
 	}
 	
-	{ // CheckAllDestroyed
-		long nbmissiles	= 0;
-		
+	{
+		long nbmissiles = 0;
 		for(size_t i = 0; i < m_missiles.size(); i++) {
 			CMagicMissile *pMM = m_missiles[i];
 			if(pMM->bMove) {
 				nbmissiles++;
 			}
 		}
-		
 		if(nbmissiles == 0) {
 			m_duration = 0;
 		}
@@ -365,7 +363,7 @@ void IgnitSpell::Launch() {
 	
 	m_lights.clear();
 	
-	CheckForIgnition(Sphere(m_srcPos, fPerimeter), 1, 1);
+	CheckForIgnition(Sphere(m_srcPos, fPerimeter), true, 1);
 	
 	for(size_t ii = 0; ii < g_staticLightsMax; ii++) {
 		EERIE_LIGHT * light = g_staticLights[ii];
@@ -472,7 +470,7 @@ void DouseSpell::Launch() {
 	
 	float fPerimeter = 400.f + m_level * 30.f;
 	
-	CheckForIgnition(Sphere(target, fPerimeter), 0, 1);
+	CheckForIgnition(Sphere(target, fPerimeter), false, 1);
 	
 	for(size_t ii = 0; ii < g_staticLightsMax; ii++) {
 		EERIE_LIGHT * light = g_staticLights[ii];

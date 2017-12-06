@@ -41,7 +41,7 @@ void PackedTexture::upload() {
 	for(texture_iterator i = textures.begin(); i != textures.end(); ++i) {
 		TextureTree * tree = *i;
 		if(tree->dirty) {
-			tree->texture->Upload();
+			tree->texture->upload();
 			tree->dirty = false;
 		}
 	}
@@ -52,15 +52,15 @@ PackedTexture::TextureTree::TextureTree(unsigned int textureSize,
 	
 	root.rect = Rect(0, 0, textureSize - 1, textureSize - 1);
 	
-	texture = GRenderer->CreateTexture2D();
-	if(!texture->Init(textureSize, textureSize, textureFormat)) {
+	texture = GRenderer->createTexture();
+	if(!texture->create(textureSize, textureSize, textureFormat)) {
 		LogError << "Could not create texture for size " << textureSize
 		         << " and format " << textureFormat;
 		delete texture, texture = NULL;
 		dirty = false;
 		return;
 	}
-	texture->GetImage().Clear();
+	texture->getImage().clear();
 	dirty = true;
 }
 
@@ -73,7 +73,7 @@ PackedTexture::TextureTree::Node * PackedTexture::TextureTree::insertImage(const
 	Node * node = root.insertImage(img);
 	
 	if(node != NULL) {
-		texture->GetImage().Copy(img, node->rect.left, node->rect.top);
+		texture->getImage().copy(img, size_t(node->rect.left), size_t(node->rect.top));
 		dirty = true;
 	}
 	
@@ -84,7 +84,7 @@ bool PackedTexture::insertImage(const Image & image, unsigned int & textureIndex
                                 Vec2i & offset) {
 	
 	// Validate image size
-	if(image.GetWidth() > textureSize || image.GetHeight() > textureSize) {
+	if(image.getWidth() > textureSize || image.getHeight() > textureSize) {
 		return false;
 	}
 	
@@ -122,7 +122,7 @@ bool PackedTexture::insertImage(const Image & image, unsigned int & textureIndex
 	return node != NULL;
 }
 
-Texture2D& PackedTexture::getTexture(unsigned int index) {
+Texture & PackedTexture::getTexture(unsigned int index) {
 	arx_assert(index < textures.size());
 	arx_assert(textures[index]->texture);
 	return *textures[index]->texture;
@@ -131,7 +131,7 @@ Texture2D& PackedTexture::getTexture(unsigned int index) {
 PackedTexture::TextureTree::Node::Node() {
 	children[0] = NULL;
 	children[1] = NULL;
-	used = 0;
+	used = false;
 }
 
 PackedTexture::TextureTree::Node::~Node() {
@@ -159,8 +159,8 @@ PackedTexture::TextureTree::Node * PackedTexture::TextureTree::Node::insertImage
 		return result;
 	}
 	
-	int diffW = (rect.width() + 1) - image.GetWidth();
-	int diffH = (rect.height() + 1) - image.GetHeight();
+	s32 diffW = (rect.width() + 1) - s32(image.getWidth());
+	s32 diffH = (rect.height() + 1) - s32(image.getHeight());
 	
 	// If we're too small, return.
 	if(diffW < 0 || diffH < 0) {
@@ -178,11 +178,11 @@ PackedTexture::TextureTree::Node * PackedTexture::TextureTree::Node::insertImage
 	children[1] = new Node();
 	
 	if(diffW > diffH) {
-		children[0]->rect = Rect(rect.left, rect.top, rect.left + image.GetWidth() - 1, rect.bottom);
-		children[1]->rect = Rect(rect.left + image.GetWidth(), rect.top, rect.right, rect.bottom);
+		children[0]->rect = Rect(rect.left, rect.top, rect.left + s32(image.getWidth()) - 1, rect.bottom);
+		children[1]->rect = Rect(rect.left + s32(image.getWidth()), rect.top, rect.right, rect.bottom);
 	} else {
-		children[0]->rect = Rect(rect.left, rect.top, rect.right, rect.top + image.GetHeight() - 1);
-		children[1]->rect = Rect(rect.left, rect.top + image.GetHeight(), rect.right, rect.bottom);
+		children[0]->rect = Rect(rect.left, rect.top, rect.right, rect.top + s32(image.getHeight()) - 1);
+		children[1]->rect = Rect(rect.left, rect.top + s32(image.getHeight()), rect.right, rect.bottom);
 	}
 	
 	// Insert into first child we created

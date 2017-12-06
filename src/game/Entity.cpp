@@ -92,7 +92,7 @@ Entity::Entity(const res::path & classPath, EntityInstance instance)
 	angle = Anglef::ZERO;
 	physics = IO_PHYSICS();
 	room = -1;
-	requestRoomUpdate = 1;
+	requestRoomUpdate = true;
 	original_height = 0.f;
 	original_radius = 0.f;
 	m_icon = NULL;
@@ -337,7 +337,7 @@ void Entity::destroy() {
 	}
 	
 	if(obj) {
-		while(obj->linked.size()) {
+		while(!obj->linked.empty()) {
 			if(obj->linked[0].lgroup != ObjVertGroup() && obj->linked[0].obj) {
 				Entity * linked = obj->linked[0].io;
 				if(linked && ValidIOAddress(linked)) {

@@ -200,7 +200,7 @@ static long fix_io(SaveBlock & save, const std::string & name, Idents & idents, 
 		return 0;
 	}
 	
-	std::string savefile = name;
+	const std::string & savefile = name;
 	
 	size_t size = 0;
 	char * dat = save.load(savefile, size);
@@ -278,7 +278,7 @@ static bool patch_ident(char (&name)[SIZE_ID], long newIdent, const std::string 
 	
 	size_t pos = namestr.find_last_of('_');
 	
-	util::storeString(name, makeIdent(namestr.substr(0, pos), newIdent).c_str());
+	util::storeString(name, makeIdent(namestr.substr(0, pos), newIdent));
 	
 	return true;
 }

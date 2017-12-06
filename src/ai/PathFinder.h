@@ -142,9 +142,9 @@ private:
 	float getIlluminationCost(const Vec3f & pos) const;
 	NodeId getNearestNode(const Vec3f & pos) const;
 	
-	float radius;
-	float height;
-	float heuristic;
+	float m_radius;
+	float m_height;
+	float m_heuristic;
 	
 	size_t map_s; // Map size
 	const ANCHOR_DATA * map_d; // Map data

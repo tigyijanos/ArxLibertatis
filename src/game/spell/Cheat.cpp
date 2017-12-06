@@ -91,8 +91,8 @@ void CheatDrawText() {
 			sp_max_y[i] = std::sin(d.x + elapsed / PlatformDurationMs(100)) * 30.f * modi;
 			std::string tex(1, sp_max_ch[i]);
 			
-			UNICODE_ARXDrawTextCenter(hFontInBook, d + Vec2f(-1,-1), tex, Color::none);
-			UNICODE_ARXDrawTextCenter(hFontInBook, d + Vec2f( 1, 1), tex, Color::none);
+			UNICODE_ARXDrawTextCenter(hFontInBook, d + Vec2f(-1, -1), tex, Color::none);
+			UNICODE_ARXDrawTextCenter(hFontInBook, d + Vec2f(1, 1), tex, Color::none);
 			UNICODE_ARXDrawTextCenter(hFontInBook, d, tex, sp_max_col[i]);
 		}
 	}
@@ -302,12 +302,7 @@ static void ApplyCurPNux() {
 static void ApplyPasswall() {
 	MakeSpCol();
 	DisplayCheatText("!!! PassWall !!!");
-	
-	if(USE_PLAYERCOLLISIONS) {
-		USE_PLAYERCOLLISIONS = false;
-	} else {
-		USE_PLAYERCOLLISIONS = true;
-	}
+	USE_PLAYERCOLLISIONS = !USE_PLAYERCOLLISIONS;
 }
 
 static void ApplySPRf() {
@@ -377,7 +372,6 @@ static void ApplyConsole() {
 	g_console.open();
 }
 
-extern float PULSATE;
 static TextureContainer * Mr_tc = NULL;
 
 void CheckMr() {

@@ -120,7 +120,7 @@ void RiseDeadSpell::End() {
 		ARX_SOUND_PlaySFX(SND_SPELL_ELECTRIC, &entity->pos);
 		
 		if(entity->scriptload && (entity->ioflags & IO_NOSAVE)) {
-			AddRandomSmoke(entity,100);
+			AddRandomSmoke(entity, 100);
 			Vec3f posi = entity->pos;
 			posi.y-=100.f;
 			MakeCoolFx(posi);
@@ -199,8 +199,8 @@ void RiseDeadSpell::Update() {
 					EVENT_SENDER = NULL;
 				}
 				
-				SendIOScriptEvent(io,SM_SUMMONED);
-					
+				SendIOScriptEvent(io, SM_SUMMONED);
+				
 				Vec3f pos = m_fissure.m_eSrc;
 				pos += arx::randomVec3f() * 100.f;
 				pos += Vec3f(-50.f, 50.f, -50.f);
@@ -215,7 +215,7 @@ void RiseDeadSpell::Update() {
 			m_duration = 0;
 		}
 	} else if(!g_gameTime.isPaused() && tim < GameDurationMs(4000)) {
-	  if(Random::getf() > 0.95f) {
+		if(Random::getf() > 0.95f) {
 			MakeCoolFx(m_fissure.m_eSrc);
 		}
 	}
@@ -275,7 +275,7 @@ void CreateFieldSpell::Launch() {
 		//move time of creation back by 4 seconds or whatever elapsed after game time 0 (if it is smaller)
 		//prevents difference between creation time and elapsed time of m_field (or as small as possible)
 		//related to m_field.Update() with comment below
-		start = GameInstantMs(toMsi(start) - std::min(toMsi(start), toMsi(GameInstantMs(4000))));
+		start -= std::min(start - GameInstant(0), GameDurationMs(4000));
 	}
 	m_timcreation = start;
 	
@@ -349,10 +349,7 @@ void CreateFieldSpell::End() {
 	
 	endLightDelayed(m_field.lLightId, GameDurationMs(800));
 	
-	Entity * io = entities.get(m_entity);
-	if(io) {
-		delete io;
-	}
+	delete entities.get(m_entity);
 }
 
 void CreateFieldSpell::Update() {

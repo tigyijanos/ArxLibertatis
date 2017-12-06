@@ -39,7 +39,7 @@
 static std::vector<Vec2f> plist;
 bool bPrecastSpell = false;
 
-static void handleRuneDetection(Rune);
+static void handleRuneDetection(Rune rune);
 
 typedef struct RunePattern{
 	Rune runeId;
@@ -48,27 +48,27 @@ typedef struct RunePattern{
 } RunePattern;
 
 const RunePattern patternData[] = {
-	{RUNE_AAM,         CheatRune_AAM,        "6"},
-	{RUNE_CETRIUS,     CheatRune_None,       "386"},
-	{RUNE_COMUNICATUM, CheatRune_COMUNICATUM,"62426"},
-	{RUNE_COSUM,       CheatRune_None,       "6248"},
-	{RUNE_FOLGORA,     CheatRune_None,       "93"},
-	{RUNE_FRIDD,       CheatRune_None,       "862"},
-	{RUNE_KAOM,        CheatRune_KAOM,       "41236"},
+	{RUNE_AAM,         CheatRune_AAM,         "6"},
+	{RUNE_CETRIUS,     CheatRune_None,        "386"},
+	{RUNE_COMUNICATUM, CheatRune_COMUNICATUM, "62426"},
+	{RUNE_COSUM,       CheatRune_None,        "6248"},
+	{RUNE_FOLGORA,     CheatRune_None,        "93"},
+	{RUNE_FRIDD,       CheatRune_None,        "862"},
+	{RUNE_KAOM,        CheatRune_KAOM,        "41236"},
 	{RUNE_KAOM,        CheatRune_KAOM,       "1236"},
-	{RUNE_MEGA,        CheatRune_MEGA,       "8"},
-	{RUNE_MORTE,       CheatRune_None,       "62"},
-	{RUNE_MOVIS,       CheatRune_None,       "616"},
-	{RUNE_NHI,         CheatRune_None,       "4"},
-	{RUNE_RHAA,        CheatRune_None,       "2"},
-	{RUNE_SPACIUM,     CheatRune_SPACIUM,    "4268"},
-	{RUNE_STREGUM,     CheatRune_STREGUM,    "838"},
-	{RUNE_TAAR,        CheatRune_None,       "626"},
-	{RUNE_TEMPUS,      CheatRune_None,       "862686"},
-	{RUNE_TERA,        CheatRune_None,       "926"},
-	{RUNE_VISTA,       CheatRune_None,       "31"},
-	{RUNE_VITAE,       CheatRune_None,       "68"},
-	{RUNE_YOK,         CheatRune_None,       "268"},
+	{RUNE_MEGA,        CheatRune_MEGA,        "8"},
+	{RUNE_MORTE,       CheatRune_None,        "62"},
+	{RUNE_MOVIS,       CheatRune_None,        "616"},
+	{RUNE_NHI,         CheatRune_None,        "4"},
+	{RUNE_RHAA,        CheatRune_None,        "2"},
+	{RUNE_SPACIUM,     CheatRune_SPACIUM,     "4268"},
+	{RUNE_STREGUM,     CheatRune_STREGUM,     "838"},
+	{RUNE_TAAR,        CheatRune_None,        "626"},
+	{RUNE_TEMPUS,      CheatRune_None,        "862686"},
+	{RUNE_TERA,        CheatRune_None,        "926"},
+	{RUNE_VISTA,       CheatRune_None,        "31"},
+	{RUNE_VITAE,       CheatRune_None,        "68"},
+	{RUNE_YOK,         CheatRune_None,        "268"},
 	//cheat runes
 	{RUNE_NONE,        CheatRune_O,          "9317"},
 	{RUNE_NONE,        CheatRune_M,          "8392"},
@@ -370,7 +370,7 @@ int RuneRecognitionAlt::findMatchingPattern(){
 	int index = -1;
 	int min = std::numeric_limits<int>::max();
 	for(size_t rune = 0; rune < s_patternCount; rune++) {
-		bool refuse = 0;
+		bool refuse = false;
 		int errors = 0;
 		size_t patternIndex = 0, inputIndex = 0;
 		size_t patternSize = patternData[rune].dirs.size();
@@ -385,7 +385,7 @@ int RuneRecognitionAlt::findMatchingPattern(){
 			errors += diff;
 			
 			if(diff > 1 || errors > s_maxTolerance) {
-				refuse = 1;
+				refuse = true;
 				break;
 			}
 			
@@ -609,14 +609,14 @@ void spellRecognitionPointsReset() {
 // Adds a 2D point to currently drawn spell symbol
 void ARX_SPELLS_AddPoint(const Vec2s & pos) {
 	
-	if(plist.size() && Vec2f(pos) == plist.back()) {
+	if(!plist.empty() && Vec2f(pos) == plist.back()) {
 		return;
 	}
-
+	
 	if(plist.size() == MAX_POINTS) {
 		plist.pop_back();
 	}
-
+	
 	plist.push_back(Vec2f(pos));
 }
 
@@ -798,102 +798,102 @@ void ARX_SPELLS_AnalyseSYMBOL() {
 	switch(sm) {
 		
 		// COSUM
-		case 62148  :
-		case 632148 :
-		case 62498  :
-		case 62748  :
-		case 6248   :
+		case 62148:
+		case 632148:
+		case 62498:
+		case 62748:
+		case 6248:
 			handleRuneDetection(RUNE_COSUM);
 			break;
 		// COMUNICATUM
-		case 632426 :
-		case 627426 :
-		case 634236 :
-		case 624326 :
-		case 62426  :
+		case 632426:
+		case 627426:
+		case 634236:
+		case 624326:
+		case 62426:
 			handleCheatRuneDetection(CheatRune_COMUNICATUM);
 			handleRuneDetection(RUNE_COMUNICATUM);
 			break;
 		// FOLGORA
-		case 9823   :
-		case 9232   :
-		case 983    :
-		case 963    :
-		case 923    :
-		case 932    :
-		case 93     :
+		case 9823:
+		case 9232:
+		case 983:
+		case 963:
+		case 923:
+		case 932:
+		case 93:
 			handleRuneDetection(RUNE_FOLGORA);
 			break;
 		// SPACIUM
-		case 42368  :
-		case 42678  :
-		case 42698  :
-		case 4268   :
+		case 42368:
+		case 42678:
+		case 42698:
+		case 4268:
 			handleCheatRuneDetection(CheatRune_SPACIUM);
 			handleRuneDetection(RUNE_SPACIUM);
 			break;
 		// TERA
-		case 9826   :
-		case 92126  :
-		case 9264   :
-		case 9296   :
-		case 926    :
+		case 9826:
+		case 92126:
+		case 9264:
+		case 9296:
+		case 926:
 			handleRuneDetection(RUNE_TERA);
 			break;
 		// CETRIUS
-		case 286   :
-		case 3286  :
-		case 23836 :
-		case 38636 :
-		case 2986  :
-		case 2386  :
-		case 386   :
+		case 286:
+		case 3286:
+		case 23836:
+		case 38636:
+		case 2986:
+		case 2386:
+		case 386:
 			handleRuneDetection(RUNE_CETRIUS);
 			break;
 		// RHAA
-		case 28    :
-		case 2     :
+		case 28:
+		case 2:
 			handleRuneDetection(RUNE_RHAA);
 			break;
 		// FRIDD
-		case 98362	:
-		case 8362	:
-		case 8632	:
-		case 8962	:
-		case 862	:
+		case 98362:
+		case 8362:
+		case 8632:
+		case 8962:
+		case 862:
 			handleRuneDetection(RUNE_FRIDD);
 			break;
 		// KAOM
-		case 41236	:
-		case 23		:
-		case 236	:
-		case 2369	:
-		case 136	:
-		case 12369	:
-		case 1236	:
+		case 41236:
+		case 23:
+		case 236:
+		case 2369:
+		case 136:
+		case 12369:
+		case 1236:
 			handleCheatRuneDetection(CheatRune_KAOM);
 			handleRuneDetection(RUNE_KAOM);
 			break;
 		// STREGUM
-		case 82328 :
-		case 8328  :
-		case 2328  :
-		case 8938  :
-		case 8238  :
-		case 838   :
+		case 82328:
+		case 8328:
+		case 2328:
+		case 8938:
+		case 8238:
+		case 838:
 			handleCheatRuneDetection(CheatRune_STREGUM);
 			handleRuneDetection(RUNE_STREGUM);
 			break;
 		// MORTE
-		case 628   :
-		case 621   :
-		case 62    :
+		case 628:
+		case 621:
+		case 62:
 			handleRuneDetection(RUNE_MORTE);
 			break;
 		// TEMPUS
-		case 962686  :
-		case 862686  :
-		case 8626862 :
+		case 962686:
+		case 862686:
+		case 8626862:
 			handleRuneDetection(RUNE_TEMPUS);
 			break;
 		// MOVIS
@@ -961,8 +961,8 @@ void ARX_SPELLS_AnalyseSYMBOL() {
 		case 68:
 			handleRuneDetection(RUNE_VITAE);
 			break;
-//-----------------------------------------------
-// Cheat spells
+		//-----------------------------------------------
+		// Cheat spells
 		// Special UW mode
 		case 238:
 		case 2398:

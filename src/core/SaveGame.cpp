@@ -32,10 +32,10 @@
 
 namespace {
 
-static const fs::path SAVEGAME_NAME = "gsave.sav";
-static const fs::path SAVEGAME_DIR = "save";
-static const fs::path SAVEGAME_THUMBNAIL = "gsave.bmp";
-static const std::string QUICKSAVE_ID = "ARX_QUICK_ARX";
+const fs::path SAVEGAME_NAME = "gsave.sav";
+const fs::path SAVEGAME_DIR = "save";
+const fs::path SAVEGAME_THUMBNAIL = "gsave.bmp";
+const std::string QUICKSAVE_ID = "ARX_QUICK_ARX";
 
 enum SaveGameChange {
 	SaveGameRemoved,
@@ -43,7 +43,7 @@ enum SaveGameChange {
 	SaveGameChanged
 };
 
-static int saveTimeCompare(const SaveGame & a, const SaveGame & b) {
+int saveTimeCompare(const SaveGame & a, const SaveGame & b) {
 	return (a.stime > b.stime);
 }
 
@@ -159,7 +159,7 @@ void SaveGameList::update(bool verbose) {
 				oss << "(quicksave)" << std::setw(max_name_length - 8) << ' ';
 			} else {
 				oss << "\"" << savelist[i].name << "\""
-						<< std::setw(max_name_length - savelist[i].name.length() + 1) << ' ';
+				    << std::setw(max_name_length - savelist[i].name.length() + 1) << ' ';
 			}
 			
 			const char * lead = """Found save ";
@@ -236,7 +236,7 @@ bool SaveGameList::save(const std::string & name, iterator overwrite, const Imag
 		return false;
 	}
 	
-	if(thumbnail.IsValid() && !thumbnail.save(savefile.parent() / SAVEGAME_THUMBNAIL)) {
+	if(thumbnail.isValid() && !thumbnail.save(savefile.parent() / SAVEGAME_THUMBNAIL)) {
 		LogWarning << "Failed to save screenshot to " << (savefile.parent() / SAVEGAME_THUMBNAIL);
 	}
 	

@@ -192,36 +192,10 @@ inline float IsPolyInCylinder(const EERIEPOLY & ep, const Cylinder & cyl, long f
 		if(r >= to)
 			r=0;
 	}
-
-
-//	To Add "more" precision
-
-/*if (flags & CFLAG_EXTRA_PRECISION)
-{
-
-	for (long j=0;j<360;j+=90)
-	{
-		float xx=-std::sin(radians((float)j))*cyl.radius;
-		float yy=std::cos(radians((float)j))*cyl.radius;
-		EERIE_3D pos;
-		pos.x=cyl.origin.x+xx;
-
-		pos.z=cyl.origin.z+yy;
-		//EERIEPOLY * epp;
-
-		if (PointIn2DPolyXZ(ep, pos.x, pos.z)) 
-		{
-			if (GetTruePolyY(ep,&pos,&xx))
-			{				
-				anything=min(anything,xx);
-				return anything;
-			}
-		}
-	} 
-//}*/
+	
 	if(anything != 999999.f && ep.norm.y < 0.1f && ep.norm.y > -0.1f)
 		anything = std::min(anything, ep.min.y);
-
+	
 	return anything;
 }
 
@@ -270,8 +244,8 @@ inline bool IsPolyInSphere(const EERIEPOLY & ep, const Sphere & sph) {
 	return false;
 }
 
-bool IsCollidingIO(Entity * io,Entity * ioo) {
-
+bool IsCollidingIO(Entity * io, Entity * ioo) {
+	
 	if(ioo != NULL
 	   && io != ioo
 	   && !(ioo->ioflags & IO_NO_COLLISIONS)
@@ -339,8 +313,8 @@ void PushIO_ON_Top(Entity * ioo, float ydec) {
 						float tval=1.1f;
 						
 						for(int kk = 0; kk < 3; kk++) {
-								ep.v[kk].p.x = (ep.v[kk].p.x - cx) * tval + cx;
-								ep.v[kk].p.z = (ep.v[kk].p.z - cz) * tval + cz;
+							ep.v[kk].p.x = (ep.v[kk].p.x - cx) * tval + cx;
+							ep.v[kk].p.z = (ep.v[kk].p.z - cz) * tval + cz;
 						}
 						
 						if(PointIn2DPolyXZ(&ep, io->pos.x, io->pos.z)) {
@@ -368,7 +342,7 @@ void PushIO_ON_Top(Entity * ioo, float ydec) {
 								} else {
 									Cylinder cyl = GetIOCyl(io);
 									cyl.origin.y += ydec;
-									if(CheckAnythingInCylinder(cyl, io ,0) >= 0) {
+									if(CheckAnythingInCylinder(cyl, io, 0) >= 0) {
 										io->pos.y += ydec;
 									}
 								}
@@ -414,16 +388,12 @@ bool CylinderPlatformCollide(const Cylinder & cyl, Entity * io) {
 		return false;
 	}
 	
-	if(In3DBBoxTolerance(cyl.origin, io->bbox3D, cyl.radius)) {
-		return true;
-	}
-	
-	return false;
+	return In3DBBoxTolerance(cyl.origin, io->bbox3D, cyl.radius);
 }
 
 static long NPC_IN_CYLINDER = 0;
 
-static bool CollidedFromBack(Entity * io,Entity * ioo) {
+static bool CollidedFromBack(Entity * io, Entity * ioo) {
 	
 	// io was collided from back ?
 	EERIEPOLY ep;
@@ -568,11 +538,10 @@ float CheckAnythingInCylinder(const Cylinder & cyl, Entity * ioo, long flags) {
 			{
 				Cylinder & io_cyl = io->physics.cyl;
 				io_cyl = GetIOCyl(io);
-
-				if (	(io->gameFlags & GFLAG_PLATFORM)
-					||	((flags & CFLAG_COLLIDE_NOCOL) && (io->ioflags & IO_NPC) &&  (io->ioflags & IO_NO_COLLISIONS))
-					)
-				{
+				
+				if((io->gameFlags & GFLAG_PLATFORM)
+				   || ((flags & CFLAG_COLLIDE_NOCOL) && (io->ioflags & IO_NPC) &&  (io->ioflags & IO_NO_COLLISIONS))) {
+					
 					if(closerThan(Vec2f(io->pos.x, io->pos.z), Vec2f(cyl.origin.x, cyl.origin.z), 440.f + cyl.radius))
 					if(In3DBBoxTolerance(cyl.origin, io->bbox3D, cyl.radius+80))
 					{
@@ -784,13 +753,13 @@ float CheckAnythingInCylinder(const Cylinder & cyl, Entity * ioo, long flags) {
 											io->collide_door_time = g_gameTime.now();
 											SendIOScriptEvent(ioo, SM_COLLIDE_FIELD);
 										}
-					
+										
 										if(!dealt && ioo && (ioo->damager_damages > 0 || io->damager_damages > 0)) {
 											dealt = true;
 											
 											if(ioo->damager_damages > 0)
 												ARX_DAMAGES_DealDamages(EntityHandle(i), ioo->damager_damages, ioo->index(), ioo->damager_type, &io->pos);
-									
+											
 											if(io->damager_damages > 0)
 												ARX_DAMAGES_DealDamages(ioo->index(), io->damager_damages, io->index(), io->damager_type, &ioo->pos);
 										}
@@ -933,27 +902,27 @@ bool CheckEverythingInSphere(const Sphere & sphere, EntityHandle source, EntityH
 
 				amount=2;
 			}
-
+			
 			for(size_t ii = 0; ii < io->obj->facelist.size(); ii += amount) {
 				EERIE_FACE * ef = &io->obj->facelist[ii];
-
-				if(ef->facetype & POLY_HIDE)
+				
+				if(ef->facetype & POLY_HIDE) {
 					continue;
-
-				Vec3f fcenter = (vlist[ef->vid[0]].v + vlist[ef->vid[1]].v
-								 + vlist[ef->vid[2]].v) * (1.0f / 3);
-
+				}
+				
+				Vec3f fcenter = (vlist[ef->vid[0]].v + vlist[ef->vid[1]].v + vlist[ef->vid[2]].v) * (1.0f / 3);
+				
 				if(closerThan(fcenter, sphere.origin, sr30)
 				   || closerThan(vlist[ef->vid[0]].v, sphere.origin, sr30)
 				   || closerThan(vlist[ef->vid[1]].v, sphere.origin, sr30)
 				   || closerThan(vlist[ef->vid[2]].v, sphere.origin, sr30)) {
-
 					sphereContent.push_back(ret_idx);
-
 					vreturn = true;
 					goto suivant;
 				}
+				
 			}
+			
 		}
 		
 	suivant:
@@ -1191,7 +1160,8 @@ bool CheckIOInSphere(const Sphere & sphere, const Entity & entity, bool ignoreNo
 				if(entity.obj->vertexlist.size() < 120) {
 					for(size_t kk = 0; kk < vlist.size(); kk+=1) {
 						if(kk != ii) {
-							for(float nn = 0.2f; nn < 1.f; nn += 0.2f) {
+							for(size_t n = 1; n < 5; n++) {
+								float nn = float(n) * 0.2f;
 								Vec3f posi = vlist[ii].v * nn + vlist[kk].v * (1.f - nn);
 								if(!fartherThan(sphere.origin, posi, sr30 + 20)) {
 									count++;
@@ -1254,11 +1224,8 @@ bool AttemptValidCylinderPos(Cylinder & cyl, Entity * io, CollisionFlags flags) 
 			
 			if((flags & CFLAG_PLAYER) && player.jumpphase != NotJumping) {
 				tolerate = 0;
-			} else if(io
-					&& (io->ioflags & IO_NPC)
-					&& io->_npcdata->pathfind.listnb > 0
-					&& io->_npcdata->pathfind.listpos < io->_npcdata->pathfind.listnb
-			) {
+			} else if(io && (io->ioflags & IO_NPC) && io->_npcdata->pathfind.listnb > 0
+			          && io->_npcdata->pathfind.listpos < io->_npcdata->pathfind.listnb) {
 				tolerate = -65 - io->_npcdata->moveproblem;
 			} else {
 				if(io && io->_npcdata) {
@@ -1366,18 +1333,13 @@ bool ARX_COLLISION_Move_Cylinder(IO_PHYSICS * ip, Entity * io, float MOVE_CYLIND
 		MOVING_CYLINDER = 0;
 		return false;
 	}
-
+	
 	float distance = glm::distance(ip->startpos, ip->targetpos);
-
 	if(distance < 0.1f) {
 		MOVING_CYLINDER = 0;
-
-		if(distance == 0.f)
-			return true;
-
-		return false;
+		return (distance == 0.f);
 	}
-
+	
 	Vec3f mvector = (ip->targetpos - ip->startpos) / distance;
 	long count=100;
 
@@ -1398,7 +1360,7 @@ bool ARX_COLLISION_Move_Cylinder(IO_PHYSICS * ip, Entity * io, float MOVE_CYLIND
 		test.cyl.origin.y += mvector.y * curmovedist;
 		test.cyl.origin.z += vector2D.z;
 		
-		if(AttemptValidCylinderPos(test.cyl,io,flags)) {
+		if(AttemptValidCylinderPos(test.cyl, io, flags)) {
 			// Found without complication
 			*ip = test;
 		} else {

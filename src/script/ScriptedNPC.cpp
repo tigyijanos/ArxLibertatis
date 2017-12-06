@@ -155,7 +155,7 @@ public:
 		
 		DebugScript(' ' << options);
 		
-		ARX_NPC_Revive(context.getEntity(), init ? 1 : 0);
+		ARX_NPC_Revive(context.getEntity(), init);
 		
 		return Success;
 	}
@@ -172,7 +172,7 @@ public:
 		
 		SpellcastFlags spflags = 0;
 		long duration = -1;
-		bool haveDuration = 0;
+		bool haveDuration = false;
 		
 		HandleFlags("kdxmsfz") {
 			
@@ -197,7 +197,7 @@ public:
 				if(duration <= 0) {
 					duration = 99999999; // TODO should this be FLT_MAX?
 				}
-				haveDuration = 1;
+				haveDuration = true;
 			}
 			if(flg & flag('x')) {
 				spflags |= SPELLCAST_FLAG_NOSOUND;

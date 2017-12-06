@@ -162,7 +162,7 @@ struct IO_NPCDATA {
 	ResourcePool manaPool;
 	
 	GameInstant reachedtime;
-	long reachedtarget;	//Is target in REACHZONE ?
+	long reachedtarget; // Is target in REACHZONE?
 	Entity * weapon; // Linked Weapon (r-hand)
 	long detect;
 	MoveMode movemode;
@@ -242,11 +242,11 @@ void ARX_NPC_Behaviour_ResetAll();
 void ARX_NPC_Behaviour_Change(Entity * io, Behaviour behavior, long behavior_param);
 void ARX_NPC_ChangeMoveMode(Entity * io, MoveMode MOVEMODE);
 void ARX_NPC_SpawnAudibleSound(const Vec3f & pos, Entity * source,
-                               const float factor = ARX_NPC_AUDIBLE_FACTOR_DEFAULT,
-                               const float presence = ARX_NPC_AUDIBLE_PRESENCE_DEFAULT);
+                               float factor = ARX_NPC_AUDIBLE_FACTOR_DEFAULT,
+                               float presence = ARX_NPC_AUDIBLE_PRESENCE_DEFAULT);
 void ARX_NPC_NeedStepSound(Entity * io, const Vec3f & pos,
-                           const float volume = ARX_NPC_AUDIBLE_VOLUME_DEFAULT,
-                           const float factor = ARX_NPC_AUDIBLE_FACTOR_DEFAULT);
+                           float volume = ARX_NPC_AUDIBLE_VOLUME_DEFAULT,
+                           float factor = ARX_NPC_AUDIBLE_FACTOR_DEFAULT);
 
 Entity * ARX_NPC_GetFirstNPCInSight(Entity * ioo);
 void CheckNPC(Entity * io);
@@ -263,5 +263,7 @@ float GetIOHeight(Entity * io);
 float GetIORadius(const Entity *io);
 
 Cylinder GetIOCyl(Entity * io);
+
+bool isEnemy(const Entity * entity);
 
 #endif // ARX_GAME_NPC_H

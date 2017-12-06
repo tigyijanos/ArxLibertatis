@@ -89,7 +89,7 @@ enum SavePlayerFlag {
 };
 
 
-#pragma pack(push,1)
+#pragma pack(push, 1)
 
 
 const size_t SAVED_QUEST_SLOT_SIZE = 80;
@@ -176,7 +176,7 @@ struct SavedMapMarkerData {
 		y = b.m_pos.y;
 		lvl = b.m_lvl;
 		arx_assert(STRING_SIZE > b.m_name.length());
-		util::storeString(name, b.m_name.c_str());
+		util::storeString(name, b.m_name);
 	}
 	
 };
@@ -371,14 +371,14 @@ struct ARX_CHANGELEVEL_PLAYER {
 	s32 gold;
 	s32 falling;
 	
-	s16	doingmagic;
-	s16	Interface;
+	s16 doingmagic;
+	s16 Interface;
 	f32 invisibility;
 	s8 useanim[36]; // padding
 	SavedIOPhysics physics;
 	// Jump Sub-data
 	u32 jumpstarttime;
-	s32 jumpphase;	// 0 no jump, 1 doing anticipation anim
+	s32 jumpphase; // 0 no jump, 1 doing anticipation anim
 	
 	char id_inventory[SAVED_INVENTORY_BAGS][SAVED_INVENTORY_X][SAVED_INVENTORY_Y][SIZE_ID];
 	s32 inventory_show[SAVED_INVENTORY_BAGS][SAVED_INVENTORY_X][SAVED_INVENTORY_Y];
@@ -917,11 +917,11 @@ struct SavedTweakerInfo {
 	
 	/* implicit */ SavedTweakerInfo(const IO_TWEAKER_INFO & b) {
 		arx_assert(b.filename.string().length() <= sizeof(filename));
-		util::storeString(filename, b.filename.string().c_str());
+		util::storeString(filename, b.filename.string());
 		arx_assert(b.skintochange.length() <= sizeof(skintochange));
-		util::storeString(skintochange, b.skintochange.c_str());
+		util::storeString(skintochange, b.skintochange);
 		arx_assert(b.skinchangeto.filename().length() <= sizeof(skinchangeto));
-		util::storeString(skinchangeto, b.skinchangeto.string().c_str());
+		util::storeString(skinchangeto, b.skinchangeto.string());
 	}
 	
 };
@@ -945,9 +945,9 @@ struct SavedTweakInfo {
 	/* implicit */ SavedTweakInfo(const TWEAK_INFO & b) {
 		type = b.type;
 		arx_assert(b.param1.string().length() <= PARAM_SIZE);
-		util::storeString(param1, b.param1.string().c_str());
-		arx_assert(b.param2.string().length() <=PARAM_SIZE);
-		util::storeString(param2, b.param2.string().c_str());
+		util::storeString(param1, b.param1.string());
+		arx_assert(b.param2.string().length() <= PARAM_SIZE);
+		util::storeString(param2, b.param2.string());
 	}
 	
 };
@@ -1112,7 +1112,7 @@ struct SavedCamera {
 		lasttarget = b.lasttarget, lastpos = b.lastpos;
 		translatetarget = b.translatetarget;
 		lastinfovalid = b.lastinfovalid;
-		norm = Vec3f(0,0,0); //TODO Remove
+		norm = Vec3f(0.f, 0.f, 0.f); //TODO Remove
 		fadecolor = Color3f::black, clip = b.clip;
 		clipz0 = 0.0f, clipz1 = 0.0f;
 		centerx = b.center.x, centery = b.center.y;

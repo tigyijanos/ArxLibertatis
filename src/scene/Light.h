@@ -89,7 +89,7 @@ enum EERIE_TYPES_EXTRAS_MODE
 	EXTRAS_FIXFLARESIZE      = 0x00000100,
 	EXTRAS_FIREPLACE         = 0x00000200,
 	EXTRAS_NO_IGNIT          = 0x00000400,
-	EXTRAS_FLARE	         = 0x00000800
+	EXTRAS_FLARE             = 0x00000800
 };
 DECLARE_FLAGS(EERIE_TYPES_EXTRAS_MODE, ExtrasType)
 DECLARE_FLAGS_OPERATORS(ExtrasType)
@@ -173,11 +173,11 @@ struct ShaderLight {
 static const size_t llightsSize = 16;
 
 void setMaxLLights(size_t count);
-void UpdateLlights(ShaderLight lights[], size_t & lightsCount, const Vec3f pos, bool forPlayerColor);
+void UpdateLlights(ShaderLight lights[], size_t & lightsCount, Vec3f pos, bool forPlayerColor);
 
 void InitTileLights();
 void ResetTileLights();
-void ComputeTileLights(short x,short z);
+void ComputeTileLights(short x, short z);
 void ClearTileLights();
 
 float GetColorz(const Vec3f &pos);

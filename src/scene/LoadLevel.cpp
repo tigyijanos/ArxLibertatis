@@ -206,7 +206,7 @@ bool DanaeLoadLevel(const res::path & file, bool loadEntities) {
 	subj.orgTrans.pos = g_loddpos;
 	subj.angle = player.angle;
 	
-	if(strcmp(dlh.ident, "DANAE_FILE")) {
+	if(strcmp(dlh.ident, "DANAE_FILE") != 0) {
 		LogError << "Not a valid file " << file << ": \"" << util::loadString(dlh.ident) << '"';
 		return false;
 	}
@@ -371,7 +371,7 @@ bool DanaeLoadLevel(const res::path & file, bool loadEntities) {
 		if(n > -1) {
 			
 			FOG_DEF * fd = &fogs[n];
-			fd->exist = 1;
+			fd->exist = true;
 			fd->rgb = dlf->rgb;
 			fd->angle = dlf->angle;
 			fd->pos = dlf->pos.toVec3() + trans;
@@ -581,7 +581,6 @@ bool DanaeLoadLevel(const res::path & file, bool loadEntities) {
 }
 
 long FAST_RELEASE = 0;
-extern Entity * FlyingOverIO;
 
 extern long JUST_RELOADED;
 

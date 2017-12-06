@@ -317,11 +317,7 @@ static bool IsBBoxInFrustrum(const EERIE_3D_BBOX & bbox, const EERIE_FRUSTRUM & 
 	}
 	
 	point = Vec3f(bbox.min.x, bbox.max.y, bbox.max.z);
-	if(IsSphereInFrustrum(point, frustrum)) {
-		return true;
-	}
-	
-	return	false;
+	return IsSphereInFrustrum(point, frustrum);
 }
 
 static bool FrustrumsClipBBox3D(const EERIE_FRUSTRUM_DATA & frustrums,
@@ -510,7 +506,7 @@ static EERIEPOLY * ARX_PORTALS_GetRoomNumForCamera(const Vec3f & pos, const Vec3
 }
 
 // flag==1 for player
-long ARX_PORTALS_GetRoomNumForPosition(const Vec3f & pos,long flag) {
+long ARX_PORTALS_GetRoomNumForPosition(const Vec3f & pos, long flag) {
 	
 	ARX_PROFILE_FUNC();
 	
@@ -628,21 +624,15 @@ static void ARX_PORTALS_InitDrawnRooms() {
 	}
 }
 
-bool IsSphereInFrustrum(const Vec3f & point, const EERIE_FRUSTRUM & frustrum, float radius)
-{
+bool IsSphereInFrustrum(const Vec3f & point, const EERIE_FRUSTRUM & frustrum, float radius) {
+	
 	float dists[4];
 	dists[0] = distanceToPoint(frustrum.plane[0], point);
 	dists[1] = distanceToPoint(frustrum.plane[1], point);
 	dists[2] = distanceToPoint(frustrum.plane[2], point);
 	dists[3] = distanceToPoint(frustrum.plane[3], point);
-
-	if (	(dists[0]+radius>0)
-		&&	(dists[1]+radius>0)
-		&&	(dists[2]+radius>0)
-		&&	(dists[3]+radius>0) )
-		return true;
-
-	return false;
+	
+	return (dists[0] + radius > 0 && dists[1] + radius > 0 && dists[2] + radius > 0 && dists[3] + radius > 0);
 }
 
 static bool FrustrumsClipPoly(const EERIE_FRUSTRUM_DATA & frustrums,
@@ -1206,10 +1196,10 @@ static void ARX_PORTALS_Frustrum_RenderRoomTCullSoft(size_t room_num,
 						fr = 0.f;
 					else
 						fr = std::max(ffr, fr * 255.f);
-
-					fr=std::min(fr,255.f);
-					fb*=255.f;
-					fb=std::min(fb,255.f);
+					
+					fr = std::min(fr, 255.f);
+					fb *= 255.f;
+					fb = std::min(fb, 255.f);
 					u8 lfr = u8(fr);
 					u8 lfb = u8(fb);
 					u8 lfg = 0x1E;
@@ -1518,7 +1508,7 @@ void ARX_SCENE_Render() {
 	// To render Dragged objs
 	if(DRAGINTER) {
 		SPECIAL_DRAGINTER_RENDER=1;
-		ARX_INTERFACE_RenderCursor();
+		ARX_INTERFACE_RenderCursor(false);
 		
 		SPECIAL_DRAGINTER_RENDER=0;
 	}

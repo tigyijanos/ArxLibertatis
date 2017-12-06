@@ -23,6 +23,10 @@
 class Entity;
 class TextureContainer;
 
+bool cursorIsSpecial();
+void cursorSetInteraction();
+void cursorSetRedistribute(long value);
+
 extern TextureContainer * cursorMovable;
 
 enum EntityMoveCursor {
@@ -37,6 +41,6 @@ void cursorTexturesInit();
 
 bool Manage3DCursor(Entity * io, bool simulate);
 
-void ARX_INTERFACE_RenderCursor(bool flag = false);
+void ARX_INTERFACE_RenderCursor(bool flag);
 
 #endif // ARX_GUI_CURSOR_H

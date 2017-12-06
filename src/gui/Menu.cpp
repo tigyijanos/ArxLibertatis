@@ -63,8 +63,10 @@ ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
 
 #include "game/Player.h"
 
+#include "gui/CharacterCreation.h"
 #include "gui/Credits.h"
 #include "gui/Interface.h"
+#include "gui/MainMenu.h"
 #include "gui/MenuPublic.h"
 #include "gui/MenuWidgets.h"
 #include "gui/Text.h"
@@ -90,89 +92,19 @@ ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
 #include "scene/GameSound.h"
 #include "scene/Light.h"
 
-extern TextManager * pTextManage;
-extern bool START_NEW_QUEST;
-extern long OLD_FLYING_OVER;
-extern long FLYING_OVER;
-
 extern bool REQUEST_SPEECH_SKIP;
 
-//-----------------------------------------------------------------------------
-// Exported global variables
-
-bool bQuickGenFirstClick = true;
 ARX_MENU_DATA ARXmenu;
 bool g_canResumeGame = true;
 
-static long SP_HEAD = 0;
-
-//-----------------------------------------------------------------------------
-// Menu Sounds
-//-----------------------------------------------------------------------------
-
-MENU_DYNAMIC_DATA::MENU_DYNAMIC_DATA()
-	: BookBackground(NULL)
-{
-	flyover[BOOK_STRENGTH] = getLocalised("system_charsheet_strength");
-	flyover[BOOK_MIND] = getLocalised("system_charsheet_intel");
-	flyover[BOOK_DEXTERITY] = getLocalised("system_charsheet_dex");
-	flyover[BOOK_CONSTITUTION] = getLocalised("system_charsheet_consti");
-	flyover[BOOK_STEALTH] = getLocalised("system_charsheet_stealth");
-	flyover[BOOK_MECANISM] = getLocalised("system_charsheet_mecanism");
-	flyover[BOOK_INTUITION] = getLocalised("system_charsheet_intuition");
-	flyover[BOOK_ETHERAL_LINK] = getLocalised("system_charsheet_etheral_link");
-	flyover[BOOK_OBJECT_KNOWLEDGE] = getLocalised("system_charsheet_objknoledge");
-	flyover[BOOK_CASTING] = getLocalised("system_charsheet_casting");
-	flyover[BOOK_PROJECTILE] = getLocalised("system_charsheet_projectile");
-	flyover[BOOK_CLOSE_COMBAT] = getLocalised("system_charsheet_closecombat");
-	flyover[BOOK_DEFENSE] = getLocalised("system_charsheet_defense");
-	flyover[BUTTON_QUICK_GENERATION] = getLocalised("system_charsheet_quickgenerate");
-	flyover[BUTTON_DONE] = getLocalised("system_charsheet_done");
-	flyover[BUTTON_SKIN] = getLocalised("system_charsheet_skin");
-	flyover[WND_ATTRIBUTES] = getLocalised("system_charsheet_atributes");
-	flyover[WND_SKILLS] = getLocalised("system_charsheet_skills");
-	flyover[WND_STATUS] = getLocalised("system_charsheet_status");
-	flyover[WND_LEVEL] = getLocalised("system_charsheet_level");
-	flyover[WND_XP] = getLocalised("system_charsheet_xpoints");
-	flyover[WND_HP] = getLocalised("system_charsheet_hp");
-	flyover[WND_MANA] = getLocalised("system_charsheet_mana");
-	flyover[WND_AC] = getLocalised("system_charsheet_ac");
-	flyover[WND_RESIST_MAGIC] = getLocalised("system_charsheet_res_magic");
-	flyover[WND_RESIST_POISON] = getLocalised("system_charsheet_res_poison");
-	flyover[WND_DAMAGE] = getLocalised("system_charsheet_damage");
-}
-
-void ARX_MENU_LaunchAmb(const std::string & _lpszAmb) {
-	ARX_SOUND_PlayMenuAmbiance(_lpszAmb);
-}
-
-void ARX_Menu_Resources_Create() {
-	
-	delete ARXmenu.mda;
-	ARXmenu.mda = new MENU_DYNAMIC_DATA();
-	ARXmenu.mda->BookBackground = TextureContainer::LoadUI("graph/interface/book/character_sheet/char_creation_bg", TextureContainer::NoColorKey);
-	
-	ARXmenu.mda->str_button_quickgen = getLocalised("system_charsheet_button_quickgen");
-	ARXmenu.mda->str_button_skin = getLocalised("system_charsheet_button_skin");
-	ARXmenu.mda->str_button_done = getLocalised("system_charsheet_button_done");
-
-}
-
-void ARX_Menu_Resources_Release(bool _bNoSound) {
+void ARX_Menu_Resources_Release() {
 	
 	config.save();
 	
-	if(ARXmenu.mda == NULL) {
-		return;
-	}
-	
-	delete ARXmenu.mda->BookBackground;
-	delete ARXmenu.mda, ARXmenu.mda = NULL;
+	g_characterCreation.freeData();
 	
 	//Synchronize game mixers with menu mixers and switch between them
-	if(_bNoSound) {
-		ARXMenu_Options_Audio_ApplyGameVolumes();
-	}
+	ARXMenu_Options_Audio_ApplyGameVolumes();
 	
 	delete g_thumbnailCursor.m_loadTexture, g_thumbnailCursor.m_loadTexture = NULL;
 }
@@ -182,7 +114,7 @@ void ARX_MENU_Clicked_QUIT() {
 	arx_assert(g_canResumeGame);
 	
 	ARX_Menu_Resources_Release();
-	ARXmenu.currentmode = AMCM_OFF;
+	ARXmenu.requestMode(Mode_InGame);
 }
 
 void ARX_MENU_Clicked_NEWQUEST() {
@@ -193,19 +125,13 @@ void ARX_MENU_Clicked_NEWQUEST() {
 	g_playerBook.forcePage(BOOKMODE_STATS);
 	player.skin = 0;
 	ARX_PLAYER_Restore_Skin();
-	ARXmenu.currentmode = AMCM_NEWQUEST;
-}
-
-static void ARX_MENU_NEW_QUEST_Clicked_QUIT() {
-	START_NEW_QUEST = true;
-	g_canResumeGame = true;
-	ARX_MENU_Clicked_QUIT();
+	ARXmenu.requestMode(Mode_CharacterCreation);
 }
 
 void ARX_MENU_Clicked_CREDITS() {
-	ARXmenu.currentmode = AMCM_CREDITS;
+	ARXmenu.requestMode(Mode_Credits);
 	credits::reset();
-	ARX_MENU_LaunchAmb(AMB_CREDITS);
+	ARX_SOUND_PlayMenuAmbiance(AMB_CREDITS);
 }
 
 void ARX_MENU_Launch(bool allowResume) {
@@ -220,16 +146,21 @@ void ARX_MENU_Launch(bool allowResume) {
 	ARX_SOUND_PlayMenuAmbiance(AMB_MENU);
 	ARX_SOUND_PlayMenu(SND_MENU_CLICK);
 
-	ARXmenu.currentmode = AMCM_MAIN;
-	ARX_Menu_Resources_Create();
-	Menu2_Open();
+	ARXmenu.requestMode(Mode_MainMenu);
+	
+	g_playerBook.stats.loadStrings();
+	g_characterCreation.loadData();
+	
+	if(pMenuCursor) {
+		pMenuCursor->reset();
+	}
 }
 
 void ARX_Menu_Manage() {
 	
 	// looks for keys for each mode.
-	switch(ARXmenu.currentmode) {
-		case AMCM_OFF: {
+	switch(ARXmenu.mode()) {
+		case Mode_InGame: {
 			// Checks for ESC key
 			if(GInput->isKeyPressedNowUnPressed(Keyboard::Key_Escape)) {
 				if(cinematicBorder.isActive()) {
@@ -245,8 +176,7 @@ void ARX_Menu_Manage() {
 					g_gameTime.pause(GameTime::PauseMenu);
 					
 					ARX_MENU_Launch(true);
-					bFadeInOut=false;	//fade out
-					g_menuFadeActive = true; //active le fade
+					MenuFader_start(Fade_Out, -1); // TODO: does this fader even work ?
 					TRUE_PLAYER_MOUSELOOK_ON = false;
 
 					ARX_PLAYER_PutPlayerInNormalStance();
@@ -254,16 +184,16 @@ void ARX_Menu_Manage() {
 			}
 			break;
 		}
-		case AMCM_NEWQUEST: {
+		case Mode_CharacterCreation: {
 			if(   GInput->isKeyPressedNowUnPressed(Keyboard::Key_Escape)
-			   && !bFadeInOut // XS: Disabling ESC capture while fading in or out.
+			   && bFadeInOut == Fade_Out //TODO: comment seems incorrect -> // XS: Disabling ESC capture while fading in or out.
 			) {
 				ARX_SOUND_PlayMenu(SND_MENU_CLICK);
-				ARXmenu.currentmode = AMCM_MAIN;
+				ARXmenu.requestMode(Mode_MainMenu);
 			}
 			break;
 		}
-		case AMCM_MAIN: {
+		case Mode_MainMenu: {
 			if(   GInput->isKeyPressedNowUnPressed(Keyboard::Key_Escape)
 			   && MENU_NoActiveWindow()
 			   && g_canResumeGame
@@ -273,13 +203,13 @@ void ARX_Menu_Manage() {
 			}
 			break;
 		}
-		case AMCM_CREDITS: {
+		case Mode_Credits: {
 			if(   GInput->isKeyPressedNowUnPressed(Keyboard::Key_Escape)
 			   || GInput->isKeyPressedNowUnPressed(Keyboard::Key_Spacebar)
 			) {
 				ARX_SOUND_PlayMenu(SND_MENU_CLICK);
-				MenuFader_start(true, true, AMCM_MAIN);
-				ARX_MENU_LaunchAmb(AMB_MENU);
+				MenuFader_start(Fade_In, Mode_MainMenu);
+				ARX_SOUND_PlayMenuAmbiance(AMB_MENU);
 			}
 			break;
 		}
@@ -288,228 +218,26 @@ void ARX_Menu_Manage() {
 	}
 }
 
-//-----------------------------------------------------------------------------
-// ARX Menu Rendering Func
-// returns false if no menu needs to be displayed
-//-----------------------------------------------------------------------------
 void ARX_Menu_Render() {
 	
-	if(ARXmenu.currentmode == AMCM_OFF)
-		return;
-	
-	bool br = Menu2_Render();
-	
-	if(br)
-		return;
-	
-	if(ARXmenu.currentmode == AMCM_OFF)
-		return;
-	
-	
-	GRenderer->Clear(Renderer::ColorBuffer);
-	
-	FLYING_OVER = 0;
-	
-	//-------------------------------------------------------------------------
-	
-	if(ARXmenu.currentmode == AMCM_NEWQUEST && ARXmenu.mda) {
-		
-		UseRenderState state(render2D().noBlend());
-		
-		if(ARXmenu.mda->BookBackground != NULL) {
-			EERIEDrawBitmap(Rectf(Vec2f(0, 0), g_size.width(), g_size.height()), 0.9f, ARXmenu.mda->BookBackground, Color::white);
+	switch(ARXmenu.mode()) {
+		case Mode_InGame: {
+			ARX_DEAD_CODE();
+			return;
 		}
-		
-		BOOKZOOM = 1;
-		
-		ARX_INTERFACE_ManageOpenedBook();
-		
-		
-		if(ARXmenu.mda) {
-			bool DONE = (player.Skill_Redistribute == 0 && player.Attribute_Redistribute == 0);
-			
-			if(!ARXmenu.mda->flyover[FLYING_OVER].empty() ) //=ARXmenu.mda->flyover[FLYING_OVER];
-			{
-				if(FLYING_OVER != OLD_FLYING_OVER) {
-					
-					int t = Random::get(0, 2);
-					
-					pTextManage->Clear();
-					OLD_FLYING_OVER = FLYING_OVER;
-					UNICODE_ARXDrawTextCenteredScroll(hFontInGame,
-						(g_size.width() * 0.5f),
-						12,
-						(g_size.center().x) * 0.82f,
-						ARXmenu.mda->flyover[FLYING_OVER],
-						Color(232 + t, 204 + t, 143 + t),
-						PlatformDurationMs(1000),
-						0.01f,
-						2);
-				}
-			} else {
-				OLD_FLYING_OVER = -1;
-			}
-			
-			Vec2f pos;
-			pos.x = 0;
-			pos.y = 313 * g_sizeRatio.y + (g_size.height() - 313 * g_sizeRatio.y) * 0.70f;
-			
-			Vec2f size = g_sizeRatio;
-			size *= 100;
-			
-			Color color = Color::none;
-			
-			//---------------------------------------------------------------------
-			// Button QUICK GENERATION
-			pos.x = (g_size.width() - (513 * g_sizeRatio.x)) * 0.5f;
-			
-			const Rectf quickGenerateButtonMouseTestRect(
-				pos,
-				size.x,
-				size.y
-			);
-			
-			if(quickGenerateButtonMouseTestRect.contains(Vec2f(DANAEMouse))) {
-				SpecialCursor = CURSOR_INTERACTION_ON;
-				FLYING_OVER = BUTTON_QUICK_GENERATION;
-				
-				if(eeMousePressed1());
-				else if (eeMouseUp1())
-				{
-					player.m_cheatQuickGenButtonClickCount++;
-					int iSkin = player.skin;
-					ARX_SOUND_PlayMenu(SND_MENU_CLICK);
-					
-					if(bQuickGenFirstClick) {
-						ARX_PLAYER_MakeAverageHero();
-						bQuickGenFirstClick = false;
-					} else {
-						ARX_PLAYER_QuickGeneration();
-					}
-					
-					player.skin = checked_range_cast<char>(iSkin);
-				}
-				
-				color = Color(255, 255, 255);
-			}
-			else
-				color = Color(232, 204, 143);
-			
-			pTextManage->AddText(hFontMenu, ARXmenu.mda->str_button_quickgen, Vec2i(pos), color);
-			
-			//---------------------------------------------------------------------
-			// Button SKIN
-			pos.x = g_size.width() * 0.5f;
-			
-			const Rectf skinButtonMouseTestRect(
-				pos,
-				size.x,
-				size.y
-			);
-			
-			if(skinButtonMouseTestRect.contains(Vec2f(DANAEMouse))) {
-				SpecialCursor = CURSOR_INTERACTION_ON;
-				FLYING_OVER = BUTTON_SKIN;
-				
-				if(eeMouseUp1()) {
-					player.m_cheatSkinButtonClickCount++;
-					BOOKZOOM = 1;
-					ARX_SOUND_PlayMenu(SND_MENU_CLICK);
-					player.skin++;
-					
-					if(player.skin > 3)
-						player.skin = 0;
-					
-					ARX_PLAYER_Restore_Skin();
-				}
-				
-				color = Color(255, 255, 255);
-			}
-			else
-				color = Color(232, 204, 143);
-			
-			pTextManage->AddText(hFontMenu, ARXmenu.mda->str_button_skin, Vec2i(pos), color);
-			
-			//---------------------------------------------------------------------
-			// Button DONE
-			pos.x = g_size.width() - (g_size.width() - 513 * g_sizeRatio.x) * 0.5f - 40 * g_sizeRatio.x;
-			
-			const Rectf doneButtonMouseTestRect(
-				pos,
-				size.x,
-				size.y
-			);
-			
-			if(doneButtonMouseTestRect.contains(Vec2f(DANAEMouse))) {
-				if(DONE)
-					SpecialCursor = CURSOR_INTERACTION_ON;
-				
-				FLYING_OVER = BUTTON_DONE;
-				
-				if(DONE && eeMouseUp1()) {
-					if(player.m_cheatSkinButtonClickCount == 8 && player.m_cheatQuickGenButtonClickCount == 10) {
-						player.m_cheatSkinButtonClickCount = -2;
-					} else if(player.m_cheatSkinButtonClickCount == -1) {
-						ARX_PLAYER_MakeSpHero();
-						player.skin = 4;
-						ARX_PLAYER_Restore_Skin();
-						player.m_cheatSkinButtonClickCount = 0;
-						SP_HEAD = 1;
-					} else {
-						if(SP_HEAD) {
-							player.skin = 4;
-							ARX_PLAYER_Restore_Skin();
-							SP_HEAD = 0;
-						}
-						
-						ARX_SOUND_PlayMenu(SND_MENU_CLICK);
-						
-						MenuFader_start(true, true, AMCM_OFF);
-					}
-				} else {
-					if(DONE)
-						color = Color(255, 255, 255);
-					else
-						color = Color(192, 192, 192);
-				}
-			} else {
-				if(DONE)
-					color = Color(232, 204, 143);
-				else
-					color = Color(192, 192, 192);
-			}
-			
-			if(player.m_cheatSkinButtonClickCount < 0)
-				color = Color(255, 0, 255);
-			
-			pTextManage->AddText(hFontMenu, ARXmenu.mda->str_button_done, Vec2i(pos), color);
+		case Mode_CharacterCreation: {
+			delete g_mainMenu, g_mainMenu = NULL;
+			g_characterCreation.render();
+			return;
 		}
-	}
-	
-	EERIE_LIGHT * light = lightHandleGet(torchLightHandle);
-	light->pos.x = 0.f + GInput->getMousePosition().x - (g_size.width() >> 1);
-	light->pos.y = 0.f + GInput->getMousePosition().y - (g_size.height() >> 1);
-	
-	if(pTextManage) {
-		pTextManage->Update(g_platformTime.lastFrameDuration());
-		pTextManage->Render();
-	}
-	
-	if(ARXmenu.currentmode != AMCM_CREDITS)
-		ARX_INTERFACE_RenderCursor(true);
-	
-	if(ARXmenu.currentmode == AMCM_NEWQUEST) {
-		if(MenuFader_process(bFadeInOut)) {
-			switch(iFadeAction) {
-				case AMCM_OFF:
-					ARX_MENU_NEW_QUEST_Clicked_QUIT();
-					MenuFader_reset();
-					
-					if(pTextManage)
-						pTextManage->Clear();
-					
-					break;
-			}
+		case Mode_Credits: {
+			delete g_mainMenu, g_mainMenu = NULL;
+			credits::render();
+			return;
+		}
+		case Mode_MainMenu: {
+			MainMenuDoFrame();
+			return;
 		}
 	}
 }

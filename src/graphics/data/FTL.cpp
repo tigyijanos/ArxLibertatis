@@ -147,7 +147,7 @@ EERIE_3DOBJ * ARX_FTL_Load(const res::path & file) {
 	if(!compressedData) {
 		compressedData = pf->readAlloc();
 		compressedSize = pf->size();
-		NOrelease = MCache_Push(filename, compressedData, compressedSize) ? 1 : 0;
+		NOrelease = MCache_Push(filename, compressedData, compressedSize);
 	}
 	
 	if(!compressedData) {
@@ -298,10 +298,7 @@ EERIE_3DOBJ * ARX_FTL_Load(const res::path & file) {
 	}
 	
 	// Alloc'n'Copy groups
-	if(obj->grouplist.size() > 0) {
-		
-		// Alloc the grouplists
-		obj->grouplist.resize(obj->grouplist.size());
+	if(!obj->grouplist.empty()) {
 		
 		// Copy in the grouplist data
 		for(size_t i = 0 ; i < obj->grouplist.size() ; i++) {

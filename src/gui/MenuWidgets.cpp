@@ -100,15 +100,7 @@ extern int newWidth;
 extern int newHeight;
 extern bool newFullscreen;
 
-// Imported global variables and functions
-extern ARX_MENU_DATA ARXmenu;
-
 bool bNoMenu=false;
-
-MenuCursor * pMenuCursor = NULL;
-
-extern CWindowMenu * pWindowMenu;
-MainMenu *mainMenu;
 
 extern TextWidget * pMenuElementApply;
 
@@ -125,7 +117,7 @@ void ARX_QuickSave() {
 	ARX_SOUND_MixerResume(ARX_SOUND_MixerGame);
 }
 
-static bool ARX_LoadGame(const SaveGame & save) {
+static void ARX_LoadGame(const SaveGame & save) {
 	
 	benchmark::begin(benchmark::LoadLevel);
 	
@@ -135,45 +127,38 @@ static bool ARX_LoadGame(const SaveGame & save) {
 	progressBarAdvance();
 	LoadLevelScreen(save.level);
 	
-	long ret = ARX_CHANGELEVEL_Load(save.savefile);
+	ARX_CHANGELEVEL_Load(save.savefile);
 	
 	g_canResumeGame = true;
-	
-	return ret != -1;
 }
 
-bool ARX_QuickLoad() {
+void ARX_QuickLoad() {
 	
 	SaveGameList::iterator save = savegames.quickload();
 	if(save == savegames.end()) {
 		// No saves found!
-		return false;
+		return;
 	}
 	
 	ARX_SOUND_MixerPause(ARX_SOUND_MixerMenu);
 	ARX_SOUND_MixerPause(ARX_SOUND_MixerGame);
-	return ARX_LoadGame(*save);
+	ARX_LoadGame(*save);
 }
 
-bool ARX_SlotLoad(SavegameHandle slotIndex) {
+void ARX_SlotLoad(SavegameHandle slotIndex) {
 	
 	if(slotIndex.handleData() >= (int)savegames.size()) {
 		// Invalid slot!
-		return false;
+		return;
 	}
 	
 	ARX_SOUND_MixerPause(ARX_SOUND_MixerMenu);
 	ARX_SOUND_MixerPause(ARX_SOUND_MixerGame);
-	return ARX_LoadGame(savegames[slotIndex.handleData()]);
+	ARX_LoadGame(savegames[slotIndex.handleData()]);
 }
 
 bool MENU_NoActiveWindow() {
-	
-	if(!pWindowMenu || pWindowMenu->m_currentPageId == MAIN) {
-		return true;
-	}
-	
-	return false;
+	return (!g_mainMenu->m_window || g_mainMenu->m_window->currentPageId() == Page_None);
 }
 
 static void Check_Apply() {
@@ -185,10 +170,10 @@ static void Check_Apply() {
 			pMenuElementApply->SetCheckOn();
 			pMenuElementApply->lColor = pMenuElementApply->lOldColor;
 		} else {
-			if(pMenuElementApply->lColor != Color(127,127,127)) {
+			if(pMenuElementApply->lColor != Color(127, 127, 127)) {
 				pMenuElementApply->SetCheckOff();
 				pMenuElementApply->lOldColor = pMenuElementApply->lColor;
-				pMenuElementApply->lColor = Color(127,127,127);
+				pMenuElementApply->lColor = Color(127, 127, 127);
 			}
 		}
 	}
@@ -196,33 +181,10 @@ static void Check_Apply() {
 
 
 
-bool Menu2_Render() {
-	
-	if(pMenuCursor == NULL) {
-		pMenuCursor = new MenuCursor();
-	}
-	pMenuCursor->update(g_platformTime.lastFrameDuration());
+void MainMenuDoFrame() {
 	
 	GRenderer->GetTextureStage(0)->setMinFilter(TextureStage::FilterLinear);
 	GRenderer->GetTextureStage(0)->setMagFilter(TextureStage::FilterLinear);
-	
-	if(AMCM_NEWQUEST == ARXmenu.currentmode || AMCM_CREDITS == ARXmenu.currentmode) {
-		
-		delete pWindowMenu, pWindowMenu = NULL;
-		delete mainMenu, mainMenu = NULL;
-		
-		if(ARXmenu.currentmode == AMCM_CREDITS){
-			credits::render();
-			return true;
-		}
-		
-		return false;
-	}
-	
-	if(pTextManage) {
-		pTextManage->Clear();
-	}
-
 	GRenderer->GetTextureStage(0)->setWrapMode(TextureStage::WrapClamp);
 
 	UseRenderState state(render2D());
@@ -230,78 +192,77 @@ bool Menu2_Render() {
 	MENUSTATE eOldMenuState=NOP;
 	MENUSTATE eM;
 
-	if(!mainMenu) {
+	if(!g_mainMenu) {
 		eM = NOP;
 	} else {
-		eM = mainMenu->eOldMenuWindowState;
+		eM = g_mainMenu->eOldMenuWindowState;
 	}
 	
-	if(!mainMenu || mainMenu->bReInitAll) {
+	if(!g_mainMenu || g_mainMenu->bReInitAll) {
 		
-		if(mainMenu && mainMenu->bReInitAll) {
-			eOldMenuState = mainMenu->eOldMenuState;
-			delete pWindowMenu, pWindowMenu = NULL;
-			delete mainMenu, mainMenu = NULL;
+		if(g_mainMenu && g_mainMenu->bReInitAll) {
+			eOldMenuState = g_mainMenu->eOldMenuState;
+			delete g_mainMenu, g_mainMenu = NULL;
 		}
 		
-		mainMenu = new MainMenu();
-		mainMenu->eOldMenuWindowState=eM;
+		g_mainMenu = new MainMenu();
+		g_mainMenu->eOldMenuWindowState=eM;
 		
-		mainMenu->init();
+		g_mainMenu->init();
 	}
 
 	bool bScroll=true;
 	
-	MENUSTATE eMenuState = mainMenu->Update();
+	if(pMenuCursor == NULL) {
+		pMenuCursor = new MenuCursor();
+	}
+	pMenuCursor->update();
+	g_mainMenu->Update();
+	
+	MENUSTATE requestedMenuState = NOP;
+	
+	if(g_mainMenu->selected() && GInput->getMouseButton(Mouse::Button_0)) {
+		g_mainMenu->selected()->OnMouseClick();
+		requestedMenuState = g_mainMenu->selected()->m_targetMenu;
+	}
 	
 	if(eOldMenuState != NOP) {
-		eMenuState=eOldMenuState;
+		requestedMenuState=eOldMenuState;
 		bScroll=false;
 	}
 	
-	if(eMenuState == RESUME_GAME) {
+	if(requestedMenuState == RESUME_GAME) {
 		pTextManage->Clear();
-		ARXmenu.currentmode = AMCM_OFF;
-		mainMenu->m_selected = NULL;
+		ARXmenu.requestMode(Mode_InGame);
 		
-		delete pWindowMenu, pWindowMenu = NULL;
-		delete mainMenu, mainMenu = NULL;
+		delete g_mainMenu, g_mainMenu = NULL;
 		
 		GRenderer->GetTextureStage(0)->setWrapMode(TextureStage::WrapRepeat);
 		
-		return true;
-	} else if(eMenuState != NOP) {
-		MainMenuLeftCreate(eMenuState);
-	
+		return;
+	} else if(requestedMenuState != NOP) {
+		g_mainMenu->eOldMenuState = requestedMenuState;
+		g_mainMenu->initWindowPages();
+		g_mainMenu->m_window->setCurrentPageId(requestedMenuState);
 	}
 	
-	mainMenu->Render();
+	g_mainMenu->Render();
 	
-	if(pWindowMenu)
-	if(   (pWindowMenu->m_currentPageId != MAIN && pWindowMenu->m_currentPageId != NEW_QUEST && pWindowMenu->m_currentPageId != CREDITS)
-	   || (pWindowMenu->m_currentPageId == NEW_QUEST && g_canResumeGame)
+	if(g_mainMenu->m_window)
+	if(   (g_mainMenu->m_window->currentPageId() != Page_None && g_mainMenu->m_window->currentPageId() != Page_NewQuestConfirm && g_mainMenu->m_window->currentPageId() != CREDITS)
+	   || (g_mainMenu->m_window->currentPageId() == Page_NewQuestConfirm && g_canResumeGame)
 	) {
 		if(!bScroll) {
-			pWindowMenu->fAngle=90.f;
-			pWindowMenu->m_currentPageId=mainMenu->eOldMenuWindowState;
+			g_mainMenu->m_window->fAngle=90.f;
+			g_mainMenu->m_window->setCurrentPageId(g_mainMenu->eOldMenuWindowState);
 		}
 
-		pWindowMenu->Update(g_platformTime.lastFrameDuration());
-		MENUSTATE eMS = pWindowMenu->Render();
-		if(eMS != NOP) {
-			mainMenu->eOldMenuWindowState=eMS;
-		}
+		g_mainMenu->m_window->Update();
+		g_mainMenu->m_window->Render();
 		Check_Apply();
 	}
 
 	bNoMenu=false;
-
-	// If the menu needs to be reinitialized, then the text in the TextManager is probably using bad fonts that were deleted already
-	// Skip one update in this case
-	if(pTextManage && !mainMenu->bReInitAll) {
-		pTextManage->Update(g_platformTime.lastFrameDuration());
-		pTextManage->Render();
-	}
 
 	GRenderer->GetTextureStage(0)->setWrapMode(TextureStage::WrapClamp);
 
@@ -309,20 +270,20 @@ bool Menu2_Render() {
 	
 	g_thumbnailCursor.render();
 	
-	if(MenuFader_process(bFadeInOut)) {
+	if(MenuFader_process()) {
 		switch(iFadeAction) {
-			case AMCM_CREDITS:
+			case Mode_Credits:
 				ARX_MENU_Clicked_CREDITS();
-				MenuFader_start(true, false, -1);
+				MenuFader_start(Fade_Out, -1);
 				break;
-			case AMCM_NEWQUEST:
+			case Mode_CharacterCreation:
 				ARX_MENU_Clicked_NEWQUEST();
-				MenuFader_start(true, false, -1);
+				MenuFader_start(Fade_Out, -1);
 				cinematicBorder.reset();
 				break;
-			case AMCM_OFF:
+			case Mode_InGame:
 				mainApp->quit();
-				MenuFader_start(true, false, -1);
+				MenuFader_start(Fade_Out, -1);
 				break;
 		}
 	}
@@ -330,8 +291,6 @@ bool Menu2_Render() {
 	GRenderer->GetTextureStage(0)->setMinFilter(TextureStage::FilterLinear);
 	GRenderer->GetTextureStage(0)->setMagFilter(TextureStage::FilterLinear);
 	GRenderer->GetTextureStage(0)->setWrapMode(TextureStage::WrapRepeat);
-	
-	return true;
 }
 
 
@@ -341,35 +300,36 @@ bool Menu2_Render() {
 
 
 
-CWindowMenu::CWindowMenu(const Vec2f & pos, const Vec2f & size)
+MenuWindow::MenuWindow()
 {
-	m_pos = RATIO_2(pos);
+	Vec2f windowMenuPos = Vec2f(20, 25);
+	Vec2f size = Vec2f(321, 430);
+	
+	m_pos = RATIO_2(windowMenuPos);
 	m_size = RATIO_2(size);
 
 	m_pages.clear();
 
-	fPosXCalc = -m_size.x;
-	fDist = m_size.x + m_pos.x;
+	m_initalOffsetX = -m_size.x;
+	m_fadeDistance = m_size.x + m_pos.x;
 	fAngle=0.f;
-
+	
+	m_requestedPage = NOP;
 	m_currentPageId=NOP;
-
-
-	float fCalc	= fPosXCalc + (fDist * glm::sin(glm::radians(fAngle)));
-
-	m_pos.x = checked_range_cast<int>(fCalc);
+	
+	m_pos.x = m_initalOffsetX + (m_fadeDistance * glm::sin(glm::radians(fAngle)));
 	
 	m_background = TextureContainer::LoadUI("graph/interface/menus/menu_console_background");
 	m_border = TextureContainer::LoadUI("graph/interface/menus/menu_console_background_border");
 }
 
-CWindowMenu::~CWindowMenu() {
+MenuWindow::~MenuWindow() {
 
 	for(std::vector<MenuPage*>::iterator it = m_pages.begin(), it_end = m_pages.end(); it < it_end; ++it)
 		delete *it;
 }
 
-void CWindowMenu::add(MenuPage *page) {
+void MenuWindow::add(MenuPage *page) {
 
 	m_pages.push_back(page);
 	page->m_oldPos.x = 0;
@@ -377,79 +337,75 @@ void CWindowMenu::add(MenuPage *page) {
 	page->m_pos = m_pos;
 }
 
-void CWindowMenu::Update(PlatformDuration _fDTime) {
-
-	float fCalc	= fPosXCalc + (fDist * glm::sin(glm::radians(fAngle)));
-
-	m_pos.x = checked_range_cast<int>(fCalc);
-	fAngle += _fDTime / PlatformDurationMsf(12.5f);
-
+void MenuWindow::Update() {
+	
+	m_requestedPage = NOP;
+	
+	m_pos.x = m_initalOffsetX + (m_fadeDistance * glm::sin(glm::radians(fAngle)));
+	
+	fAngle += g_platformTime.lastFrameDuration() / PlatformDurationMsf(12.5f);
+	
 	if(fAngle > 90.f)
 		fAngle = 90.f;
 }
 
-MENUSTATE CWindowMenu::Render() {
+void MenuWindow::Render() {
 	
 	if(bNoMenu)
-		return NOP;
+		return;
 	
-	MENUSTATE eMS=NOP;
-	
-	BOOST_FOREACH(MenuPage * page, m_pages) {
-		if(m_currentPageId == page->eMenuState) {
-			eMS = page->Update(m_pos);
-			
-			if(eMS != NOP)
-				break;
-		}
+	if(m_currentPage) {
+		m_currentPage->Update(m_pos);
 	}
+	
+	if(m_currentPage) {
 	
 	// Draw backgound and border
 	{
 		UseRenderState state(render2D().blend(BlendZero, BlendInvSrcColor));
-		EERIEDrawBitmap(Rectf(Vec2f(m_pos.x, m_pos.y),
-		                RATIO_X(m_background->m_size.x), RATIO_Y(m_background->m_size.y)),
+		EERIEDrawBitmap(Rectf(m_pos, RATIO_X(m_background->m_size.x), RATIO_Y(m_background->m_size.y)),
 		                0, m_background, Color::white);
 	}
 	
-	EERIEDrawBitmap(Rectf(Vec2f(m_pos.x, m_pos.y),
-	                RATIO_X(m_border->m_size.x), RATIO_Y(m_border->m_size.y)),
+	EERIEDrawBitmap(Rectf(m_pos, RATIO_X(m_border->m_size.x), RATIO_Y(m_border->m_size.y)),
 	                0, m_border, Color::white);
 	
-	BOOST_FOREACH(MenuPage * page, m_pages) {
-		if(m_currentPageId == page->eMenuState) {
-			page->Render();
-			
-			if(g_debugInfo == InfoPanelGuiDebug)
-				page->drawDebug();
-
-			if(eMS == NOP)
-				eMS = page->checkShortcuts();
-			break;
-		}
+		m_currentPage->Render();
+		
+		if(g_debugInfo == InfoPanelGuiDebug)
+			m_currentPage->drawDebug();
 	}
 	
-	if(eMS != NOP) {
-		m_currentPageId=eMS;
+	if(m_requestedPage != NOP) {
+		setCurrentPageId(m_requestedPage);
+		g_mainMenu->eOldMenuWindowState = m_requestedPage;
 	}
-	
-	return eMS;
 }
 
-MenuPage::MenuPage(const Vec2f & pos, const Vec2f & size, MENUSTATE _eMenuState)
+void MenuWindow::setCurrentPageId(MENUSTATE id) {
+	m_currentPageId = id;
+	
+	m_currentPage = NULL;
+	BOOST_FOREACH(MenuPage * page, m_pages) {
+		if(id == page->eMenuState) {
+			m_currentPage = page;
+		}
+	}
+}
+
+MenuPage::MenuPage(MENUSTATE _eMenuState)
 	: m_rowSpacing(10)
-	, m_savegame(0)
 	, m_selected(NULL)
-	, bEdit(false)
 	, bMouseAttack(false)
+	, bEdit(false)
 	, m_disableShortcuts(false)
 	, m_blinkTime(0)
 	, m_blink(true)
 {
-	m_size = size;
+	m_size = Vec2f(321, 430);
 	
-	Vec2f scaledSize = RATIO_2(size);
-	m_rect = Rectf(RATIO_2(pos), scaledSize.x, scaledSize.y);
+	Vec2f scaledSize = RATIO_2(m_size);
+	m_rect = Rectf(Vec2f_ZERO, scaledSize.x, scaledSize.y);
 	
 	eMenuState=_eMenuState;
 }
@@ -633,9 +589,6 @@ TextWidget * MenuPage::GetTouch(bool keyTouched, int keyId, InputKeyId* pInputKe
 {
 	int iMouseButton = keyTouched ? 0 : GInput->getMouseButtonClicked();
 	
-	if(pInputKeyId)
-		*pInputKeyId = keyId;
-
 	if(keyTouched || (iMouseButton & (Mouse::ButtonBase | Mouse::WheelBase))) {
 		if(!keyTouched && !bMouseAttack) {
 			bMouseAttack=!bMouseAttack;
@@ -703,7 +656,7 @@ TextWidget * MenuPage::GetTouch(bool keyTouched, int keyId, InputKeyId* pInputKe
 	return NULL;
 }
 
-MENUSTATE MenuPage::Update(Vec2f pos) {
+void MenuPage::Update(Vec2f pos) {
 
 	m_children.Move(m_pos - m_oldPos);
 	
@@ -711,57 +664,7 @@ MENUSTATE MenuPage::Update(Vec2f pos) {
 	m_oldPos.y=m_pos.y;
 	m_pos = pos;
 	
-	// Check if mouse over
-	if(!bEdit) {
-		m_selected=NULL;
-		Widget * widget = m_children.getAtPos(Vec2f(GInput->getMousePosition()));
-		
-		if(widget) {
-			m_selected = widget;
-			
-			if(GInput->getMouseButtonDoubleClick(Mouse::Button_0)) {
-				MENUSTATE e = m_selected->m_targetMenu;
-				bEdit = m_selected->OnMouseDoubleClick();
-				
-				if(m_selected->m_id == BUTTON_MENUEDITQUEST_LOAD)
-					return MAIN;
-				
-				if(bEdit)
-					return m_selected->m_targetMenu;
-				
-				return e;
-			}
-			
-			if(GInput->getMouseButton(Mouse::Button_0)) {
-				MENUSTATE e = m_selected->m_targetMenu;
-				bEdit = m_selected->OnMouseClick();
-				return e;
-			} else {
-				m_selected->EmptyFunction();
-			}
-		}
-	} else {
-		if(!m_selected) {
-			Widget * widget = m_children.getAtPos(Vec2f(GInput->getMousePosition()));
-			
-			if(widget) {
-				m_selected = widget;
-				
-				if(GInput->getMouseButtonDoubleClick(Mouse::Button_0)) {
-					bEdit = m_selected->OnMouseDoubleClick();
-					
-					if(bEdit)
-						return m_selected->m_targetMenu;
-				}
-			}
-		}
-	}
 	
-	return NOP;
-}
-
-MENUSTATE MenuPage::checkShortcuts() {
-
 	if(!bEdit) {
 		
 		BOOST_FOREACH(Widget * w, m_children.m_widgets) {
@@ -775,12 +678,77 @@ MENUSTATE MenuPage::checkShortcuts() {
 					}
 					bEdit = w->OnMouseClick();
 					m_selected = w;
-					return w->m_targetMenu;
+					
+					g_mainMenu->m_window->requestPage(w->m_targetMenu);
+					return;
+				}
+			}
+		}
+		
+		m_selected = m_children.getAtPos(Vec2f(GInput->getMousePosition()));
+		
+		if(m_selected) {
+			if(GInput->getMouseButtonDoubleClick(Mouse::Button_0)) {
+				MENUSTATE e = m_selected->m_targetMenu;
+				m_selected->OnMouseDoubleClick();
+				
+				switch(m_selected->m_id) {
+				case BUTTON_MENUEDITQUEST_LOAD:
+					bEdit = true;
+					break;
+				default:
+					bEdit = false;
+				}
+				
+				if(m_selected->m_id == BUTTON_MENUEDITQUEST_LOAD) {
+					g_mainMenu->m_window->requestPage(Page_None);
+					return;
+				}
+				
+				if(bEdit) {
+					g_mainMenu->m_window->requestPage(m_selected->m_targetMenu);
+					return;
+				}
+				
+				g_mainMenu->m_window->requestPage(e);
+				return;
+			}
+			
+			if(GInput->getMouseButton(Mouse::Button_0)) {
+				MENUSTATE e = m_selected->m_targetMenu;
+				bEdit = m_selected->OnMouseClick();
+				g_mainMenu->m_window->requestPage(e);
+				return;
+			} else {
+				m_selected->EmptyFunction();
+			}
+		}
+	} else {
+		if(!m_selected) {
+			Widget * widget = m_children.getAtPos(Vec2f(GInput->getMousePosition()));
+			
+			if(widget) {
+				m_selected = widget;
+				
+				if(GInput->getMouseButtonDoubleClick(Mouse::Button_0)) {
+					m_selected->OnMouseDoubleClick();
+					
+					switch(m_selected->m_id) {
+					case BUTTON_MENUEDITQUEST_LOAD:
+						bEdit = true;
+						break;
+					default:
+						bEdit = false;
+					}
+					
+					if(bEdit) {
+						g_mainMenu->m_window->requestPage(m_selected->m_targetMenu);
+						return;
+					}
 				}
 			}
 		}
 	}
-	return NOP;
 }
 
 void MenuPage::Render() {
@@ -795,8 +763,7 @@ void MenuPage::Render() {
 	
 	//HIGHLIGHT
 	if(m_selected) {
-		bool bReInit=false;
-
+		pMenuCursor->SetMouseOver();
 		m_selected->RenderMouseOver();
 		
 		{
@@ -864,7 +831,7 @@ void MenuPage::Render() {
 					}
 				}
 				
-				InputKeyId inputKeyId;
+				InputKeyId inputKeyId = keyId;
 				TextWidget * widget = GetTouch(keyTouched, keyId, &inputKeyId, true);
 				
 				if(widget) {
@@ -877,27 +844,13 @@ void MenuPage::Render() {
 							config.setActionKey(widget->m_keybindAction, widget->m_keybindIndex, inputKeyId);
 						}
 					}
-					bReInit = true;
+					ReInitActionKey();
+					bMouseAttack=false;
 				}
 			}
 			break;
 			default:
-			{
-				if(GInput->getMouseButtonNowPressed(Mouse::Button_0)) {
-					Widget * widget = m_children.GetZoneWithID(BUTTON_MENUOPTIONS_CONTROLS_CUST_DEFAULT);
-					
-					if(widget == m_selected) {
-						config.setDefaultActionKeys();
-						bReInit=true;
-					}
-				}
-			}
 			break;
-		}
-		
-		if(bReInit) {
-			ReInitActionKey();
-			bMouseAttack=false;
 		}
 	}
 }
@@ -930,26 +883,16 @@ void MenuPage::ReInitActionKey() {
 	
 }
 
-
-void Menu2_Open() {
-	if(pMenuCursor) {
-		pMenuCursor->reset();
-	}
-}
-
 void Menu2_Close() {
 	
-	ARXmenu.currentmode = AMCM_OFF;
-	
-	delete pWindowMenu, pWindowMenu = NULL;
-	delete mainMenu, mainMenu = NULL;
+	delete g_mainMenu, g_mainMenu = NULL;
 	delete pMenuCursor, pMenuCursor = NULL;
 }
 
 void MenuReInitAll() {
 	
-	if(!mainMenu)
+	if(!g_mainMenu)
 		return;
 	
-	mainMenu->bReInitAll=true;
+	g_mainMenu->bReInitAll=true;
 }

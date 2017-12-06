@@ -37,22 +37,22 @@
 
 #define SUPER_T args_adapter_impl<void(BOOST_PP_ENUM_PARAMS(DEC_N, A))>
 #define IMPL_T \
-	arg_impl<typename boost::remove_cv<typename boost::remove_reference<BOOST_PP_CAT(A,DEC_N)>::type>::type, DEC_N>
+	arg_impl<typename boost::remove_cv<typename boost::remove_reference<BOOST_PP_CAT(A, DEC_N)>::type>::type, DEC_N>
 
 template <BOOST_PP_ENUM_PARAMS(N, typename A)>
 struct args_adapter_impl<void(BOOST_PP_ENUM_PARAMS(N, A))>
-#if (N > 0)
+	#if (N > 0)
 	: SUPER_T
 	, IMPL_T
-#endif //(N > 0)
+	#endif //(N > 0)
 {
 	template <typename SourceType>
 	explicit args_adapter_impl(SourceType& s)
-#if (N > 0)
+		#if (N > 0)
 		: SUPER_T(s)
 		, IMPL_T(construct
-		(s,static_cast<typename IMPL_T::BOOST_PP_CAT(BOOST_PP_CAT(arg, DEC_N), _t) const*>(0)))
-#endif //(N > 0)
+		(s, static_cast<typename IMPL_T::BOOST_PP_CAT(BOOST_PP_CAT(arg, DEC_N), _t) const*>(0)))
+		#endif //(N > 0)
 	{
 	}
 };

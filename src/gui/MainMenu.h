@@ -22,6 +22,8 @@
 
 #include <string>
 
+#include <boost/noncopyable.hpp>
+
 #include "gui/MenuWidgets.h"
 #include "gui/widget/Widget.h"
 #include "gui/widget/WidgetContainer.h"
@@ -29,30 +31,44 @@
 
 void MainMenuLeftCreate(MENUSTATE eMenuState);
 
-class MainMenu {
-public:
-	bool					bReInitAll;
-	MENUSTATE				eOldMenuState;
-	MENUSTATE				eOldMenuWindowState;
+class MainMenu : private boost::noncopyable {
 	
-	Widget		*	m_selected;
+public:
+	
+	bool bReInitAll;
+	MENUSTATE eOldMenuState;
+	MENUSTATE eOldMenuWindowState;
+	
+	MenuWindow * m_window;
 	
 	explicit MainMenu();
 	virtual ~MainMenu();
 	
 	void init();
+	void initWindowPages();
+	
 	void onClickedResumeGame();
 	void onClickedNewQuest();
 	void onClickedCredits();
 	
-	MENUSTATE Update();
+	void Update();
 	void Render();
 	
+	Widget * selected() {
+		return m_selected;
+	}
+	
 private:
+	
 	TextureContainer * m_background;
 	WidgetContainer * m_widgets;
 	
 	TextWidget * m_resumeGame;
+	
+	Widget * m_selected;
+	
 };
+
+extern MainMenu * g_mainMenu;
 
 #endif // ARX_GUI_MAINMENU_H

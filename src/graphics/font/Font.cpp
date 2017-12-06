@@ -150,7 +150,7 @@ bool Font::insertGlyph(Char character) {
 	if(glyph.size.x != 0 && glyph.size.y != 0) {
 		
 		Image imgGlyph;
-		imgGlyph.Create(glyph.size.x, glyph.size.y, Image::Format_A8);
+		imgGlyph.create(size_t(glyph.size.x), size_t(glyph.size.y), Image::Format_A8);
 		
 		FT_Bitmap * srcBitmap = &face->glyph->bitmap;
 		arx_assert(srcBitmap->pitch >= 0);
@@ -158,7 +158,7 @@ bool Font::insertGlyph(Char character) {
 		
 		// Copy pixels
 		unsigned char * src = srcBitmap->buffer;
-		unsigned char * dst = imgGlyph.GetData();
+		unsigned char * dst = imgGlyph.getData();
 		memcpy(dst, src, glyph.size.x * glyph.size.y);
 		
 		Vec2i offset;
@@ -353,7 +353,7 @@ Font::TextSize Font::process(int x, int y, text_iterator start, text_iterator en
 				EERIEDRAWPRIM(Renderer::TriangleList, &it->second[0], it->second.size());
 			}
 		}
-					
+		
 		GRenderer->ResetTexture(0);
 		TextureStage * stage = GRenderer->GetTextureStage(0);
 		stage->setColorOp(TextureStage::OpModulate);

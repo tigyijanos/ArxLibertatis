@@ -90,6 +90,18 @@ enum UIScaleFilter {
 	UIFilterBilinear = 1
 };
 
+enum QuickLevelTransition {
+	NoQuickLevelTransition = 0,
+	JumpToChangeLevel = 1,
+	ChangeLevelImmediately = 2,
+};
+
+enum AutoReadyWeapon {
+	NeverAutoReadyWeapon = 0,
+	AutoReadyWeaponNearEnemies = 1,
+	AlwaysAutoReadyWeapon = 2,
+};
+
 struct ActionKey {
 	
 	explicit ActionKey(InputKeyId key_0 = UNUSED,
@@ -122,6 +134,7 @@ public:
 		bool fullscreen;
 		int levelOfDetail;
 		float fogDistance;
+		float gamma;
 		bool antialiasing;
 		int vsync;
 		int fpsLimit;
@@ -181,7 +194,7 @@ public:
 	struct {
 		
 		bool invertMouse;
-		bool autoReadyWeapon;
+		AutoReadyWeapon autoReadyWeapon;
 		bool mouseLookToggle;
 		bool autoDescription;
 		int mouseSensitivity;
@@ -189,6 +202,7 @@ public:
 		bool rawMouseInput;
 		bool borderTurning;
 		bool useAltRuneRecognition;
+		QuickLevelTransition quickLevelTransition;
 		bool allowConsole;
 		
 	} input;

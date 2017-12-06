@@ -28,8 +28,6 @@
 #include "graphics/particle/MagicFlare.h"
 #include "math/Types.h"
 
-extern EERIE_CAMERA subj;
-
 static const Vec2s symbolVecScale(8*2, 6*2);
 
 SYMBOL_DRAW g_bookSymbolDraw;
@@ -76,7 +74,7 @@ void ARX_SPELLS_Init_Rects() {
 		
 		Vec2s iMin;
 		Vec2s iMax;
-		ReCenterSequence(info.sequence.c_str(), iMin, iMax);
+		ReCenterSequence(info.sequence, iMin, iMax);
 		
 		Vec2s iSize = iMax - iMin;
 		lMaxSymbolDrawSize = glm::max(iSize, lMaxSymbolDrawSize);
@@ -105,7 +103,7 @@ static void updateIOLight(Entity * io) {
 	}
 }
 
-void ARX_SPELLS_UpdateBookSymbolDraw(Rect rect) {
+void ARX_SPELLS_UpdateBookSymbolDraw(const Rect & rect) {
 
 	if(g_bookSymbolDraw.sequence.empty()) {
 		return;
@@ -214,14 +212,9 @@ void ARX_SPELLS_UpdateSymbolDraw() {
 						io->gameFlags &= ~GFLAG_INVISIBILITY;
 					} else { // cast spell !!!
 						io->gameFlags &= ~GFLAG_INVISIBILITY;
-
-						ARX_SPELLS_Launch(io->spellcast_data.castingspell,
-										  handle,
-										  io->spellcast_data.spell_flags,
-										  io->spellcast_data.spell_level,
-										  io->spellcast_data.target,
-										  io->spellcast_data.duration);
-
+						ARX_SPELLS_Launch(io->spellcast_data.castingspell, handle, io->spellcast_data.spell_flags,
+						                  io->spellcast_data.spell_level, io->spellcast_data.target,
+						                  io->spellcast_data.duration);
 						if(!(io->spellcast_data.spell_flags & SPELLCAST_FLAG_NOANIM) && (io->ioflags & IO_NPC)) {
 							changeAnimation(io, 1, io->anims[ANIM_CAST]);
 						}

@@ -50,16 +50,22 @@ private:
 	
 };
 
+static const size_t MAX_FLYOVER = 32;
+
 class StatsPage : public PlayerBookPage {
 public:
+	void loadStrings();
+	
 	void manage();
 	void manageNewQuest();
 private:
 	void manageStats();
 	void RenderBookPlayerCharacter();
 	bool CheckAttributeClick(Vec2f pos, float * val, TextureContainer * tc);
-	bool CheckSkillClick(Vec2f pos, float * val, TextureContainer * tc, float * oldval);
+	bool CheckSkillClick(Vec2f pos, float * val, TextureContainer * tc, float oldval);
 	Color attributeModToColor(float modValue, float baseValue = 0.f);
+	
+	std::string flyover[MAX_FLYOVER];
 };
 
 class SpellsPage : public PlayerBookPage {
@@ -123,7 +129,5 @@ private:
 };
 
 extern PlayerBook g_playerBook;
-
-extern long BOOKZOOM;
 
 #endif // ARX_GUI_BOOK_BOOK_H

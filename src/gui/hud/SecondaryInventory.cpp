@@ -29,6 +29,7 @@
 #include "graphics/Color.h"
 #include "graphics/Draw.h"
 #include "graphics/data/TextureContainer.h"
+#include "gui/Cursor.h"
 #include "gui/Hud.h"
 #include "gui/Interface.h"
 #include "gui/hud/HudCommon.h"
@@ -60,7 +61,7 @@ void SecondaryInventoryPickAllHudIcon::updateInput() {
 	m_isSelected = m_rect.contains(Vec2f(DANAEMouse));
 	
 	if(m_isSelected) {
-		SpecialCursor=CURSOR_INTERACTION_ON;
+		cursorSetInteraction();
 		
 		if(eeMouseDown1()) {
 			// play un son que si un item est pris
@@ -92,7 +93,7 @@ void SecondaryInventoryCloseHudIcon::updateInput() {
 	m_isSelected = m_rect.contains(Vec2f(DANAEMouse));
 	
 	if(m_isSelected) {
-		SpecialCursor=CURSOR_INTERACTION_ON;
+		cursorSetInteraction();
 		
 		if(eeMouseDown1()) {
 			Entity * io = NULL;
@@ -105,7 +106,7 @@ void SecondaryInventoryCloseHudIcon::updateInput() {
 			if(io) {
 				ARX_SOUND_PlayInterface(SND_BACKPACK, Random::getf(0.9f, 1.1f));
 				g_secondaryInventoryHud.m_fadeDirection = SecondaryInventoryHud::Fade_left;
-				SendIOScriptEvent(io,SM_INVENTORY2_CLOSE);
+				SendIOScriptEvent(io, SM_INVENTORY2_CLOSE);
 				TSecondaryInventory=SecondaryInventory;
 				SecondaryInventory=NULL;
 			}
@@ -151,11 +152,10 @@ void SecondaryInventoryHud::update() {
 		if(dist > maxDist) {
 			if(m_fadeDirection != Fade_left) {
 				ARX_SOUND_PlayInterface(SND_BACKPACK, Random::getf(0.9f, 1.1f));
-				
 				m_fadeDirection = Fade_left;
-				SendIOScriptEvent(io,SM_INVENTORY2_CLOSE);
-				TSecondaryInventory=SecondaryInventory;
-				SecondaryInventory=NULL;
+				SendIOScriptEvent(io, SM_INVENTORY2_CLOSE);
+				TSecondaryInventory = SecondaryInventory;
+				SecondaryInventory = NULL;
 			} else {
 				if(player.Interface & INTER_STEAL) {
 					player.Interface &= ~INTER_STEAL;
@@ -488,7 +488,7 @@ bool SecondaryInventoryHud::dragEntity(Entity * io, const Vec2s & pos) {
 			if(ioo->ioflags & IO_SHOP) {
 				long cos = ARX_INTERACTIVE_GetPrice(io, ioo);
 				
-				float fcos	= cos - cos * player.m_skillFull.intuition * 0.005f;
+				float fcos = cos - cos * player.m_skillFull.intuition * 0.005f;
 				cos = checked_range_cast<long>(fcos);
 				
 				if(player.gold < cos) {

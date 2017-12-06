@@ -69,7 +69,7 @@ struct CinematicSound {
 	
 };
 
-static boost::array<CinematicSound, 256> TabSound;
+boost::array<CinematicSound, 256> TabSound;
 
 } // anonymous namespace
 
@@ -97,8 +97,7 @@ static bool DeleteFreeSound(size_t num) {
 	return true;
 }
 
-void DeleteAllSound(void) {
-	
+void DeleteAllSound() {
 	for(size_t i = 0; i < TabSound.size(); i++) {
 		DeleteFreeSound(i);
 	}

@@ -28,7 +28,7 @@
 #include "platform/Platform.h"
 #include "platform/Process.h"
 
-#pragma pack(push,1)
+#pragma pack(push, 1)
 
 struct CrashInfoBase {
 	
@@ -46,10 +46,10 @@ struct CrashInfoBase {
 		, crashId(0)
 		, signal(0)
 		, code(0)
-		, hasAddress(0)
-		, hasMemory(0)
-		, hasStack(0)
-		, hasFrame(0)
+		, hasAddress(false)
+		, hasMemory(false)
+		, hasStack(false)
+		, hasFrame(false)
 		, address(0)
 		, memory(0)
 		, stack(0)
@@ -158,7 +158,7 @@ enum CrashType {
 	SIGNAL_UNKNOWN
 };
 
-#pragma pack(push,1)
+#pragma pack(push, 1)
 
 struct CrashInfo : public CrashInfoBase {
 	

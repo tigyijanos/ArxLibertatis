@@ -179,22 +179,22 @@ public:
 
 PathFinder::PathFinder(size_t map_size, const ANCHOR_DATA * map_data,
                        size_t slight_count, const EERIE_LIGHT * const * slight_list)
-	: radius(RADIUS_DEFAULT), height(HEIGHT_DEFAULT), heuristic(HEURISTIC_DEFAULT),
+	: m_radius(RADIUS_DEFAULT), m_height(HEIGHT_DEFAULT), m_heuristic(HEURISTIC_DEFAULT),
 	  map_s(map_size), map_d(map_data), slight_c(slight_count), slight_l(slight_list) { }
 
-void PathFinder::setHeuristic(float _heuristic) {
-	if(_heuristic >= HEURISTIC_MAX) {
-		heuristic = HEURISTIC_MAX;
-	} else if(_heuristic <= HEURISTIC_MIN) {
-		heuristic = HEURISTIC_MIN;
+void PathFinder::setHeuristic(float heuristic) {
+	if(heuristic >= HEURISTIC_MAX) {
+		m_heuristic = HEURISTIC_MAX;
+	} else if(heuristic <= HEURISTIC_MIN) {
+		m_heuristic = HEURISTIC_MIN;
 	} else {
-		heuristic = _heuristic;
+		m_heuristic = heuristic;
 	}
 }
 
-void PathFinder::setCylinder(float _radius, float _height) {
-	radius = _radius;
-	height = _height;
+void PathFinder::setCylinder(float radius, float height) {
+	m_radius = radius;
+	m_height = height;
 }
 
 bool PathFinder::move(NodeId from, NodeId to, Result & rlist, bool stealth) const {
@@ -228,8 +228,8 @@ bool PathFinder::move(NodeId from, NodeId to, Result & rlist, bool stealth) cons
 			
 			NodeId cid = map_d[nid].linked[i];
 			
-			if((map_d[cid].flags & ANCHOR_FLAG_BLOCKED) || map_d[cid].height > height
-			   || map_d[cid].radius < radius) {
+			if((map_d[cid].flags & ANCHOR_FLAG_BLOCKED) || map_d[cid].height > m_height
+			   || map_d[cid].radius < m_radius) {
 				continue;
 			}
 			
@@ -242,11 +242,11 @@ bool PathFinder::move(NodeId from, NodeId to, Result & rlist, bool stealth) cons
 			if(stealth) {
 				distance += getIlluminationCost(map_d[cid].pos);
 			}
-			distance *= heuristic;
+			distance *= m_heuristic;
 			distance += node->getDistance();
 			
 			// Estimated cost to get from this node to the destination.
-			float remaining = (1.0f - heuristic) * fdist(map_d[cid].pos, map_d[to].pos);
+			float remaining = (1.0f - m_heuristic) * fdist(map_d[cid].pos, map_d[to].pos);
 			
 			open.add(cid, node, distance, remaining);
 		}
@@ -295,8 +295,8 @@ bool PathFinder::flee(NodeId from, const Vec3f & danger, float safeDist, Result 
 			
 			long cid = map_d[nid].linked[i];
 			
-			if((map_d[cid].flags & ANCHOR_FLAG_BLOCKED) || map_d[cid].height > height
-			   || map_d[cid].radius < radius) {
+			if((map_d[cid].flags & ANCHOR_FLAG_BLOCKED) || map_d[cid].height > m_height
+			   || map_d[cid].radius < m_radius) {
 				continue;
 			}
 			
@@ -356,7 +356,7 @@ bool PathFinder::wanderAround(NodeId from, float rad, Result & rlist, bool steal
 				
 				NodeId nid = map_d[next].linked[r];
 				if((!(map_d[nid].flags & ANCHOR_FLAG_BLOCKED)) && (map_d[nid].nblinked)
-				   && (map_d[nid].height <= height) && (map_d[nid].radius >= radius)) {
+				   && (map_d[nid].height <= m_height) && (map_d[nid].radius >= m_radius)) {
 					next = nid;
 					break;
 				}
@@ -373,11 +373,7 @@ bool PathFinder::wanderAround(NodeId from, float rad, Result & rlist, bool steal
 	}
 	
 	// Close wander around path (return to start position).
-	if(rlist.size() == s || !move(last, from, rlist, stealth)) {
-		return false;
-	}
-	
-	return true;
+	return (rlist.size() != s && move(last, from, rlist, stealth));
 }
 
 PathFinder::NodeId PathFinder::getNearestNode(const Vec3f & pos) const {
@@ -413,9 +409,9 @@ bool PathFinder::lookFor(NodeId from, const Vec3f & pos, float radius, Result & 
 	unsigned long step_c = Random::getu(4, 9);
 	for(unsigned long i = 0; i < step_c; i++) {
 		
-		Vec3f pos = map_d[to].pos + arx::randomVec(-1.f, 1.f) * radius;
+		Vec3f nextPos = map_d[to].pos + arx::randomVec(-1.f, 1.f) * radius;
 		
-		NodeId next = getNearestNode(pos);
+		NodeId next = getNearestNode(nextPos);
 		
 		if(!move(last, next, rlist, stealth)) {
 			// TODO can cause infinite loop?
@@ -427,11 +423,7 @@ bool PathFinder::lookFor(NodeId from, const Vec3f & pos, float radius, Result & 
 		last = next;
 	}
 	
-	if(rlist.size() == s) {
-		return false;
-	}
-	
-	return true;
+	return (rlist.size() != s);
 }
 
 void PathFinder::buildPath(const Node & node, Result & rlist) {

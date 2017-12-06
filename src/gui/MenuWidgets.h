@@ -66,82 +66,105 @@ class Font;
 class MenuPage : private boost::noncopyable {
 	
 public:
-	MenuPage(const Vec2f & pos, const Vec2f & size, MENUSTATE state);
+	
+	explicit MenuPage(MENUSTATE state);
 	virtual ~MenuPage();
 	
 	void add(Widget * widget);
 	void addCenter(Widget * widget, bool centerX = false);
 	void AlignElementCenter(Widget * widget);
-	MENUSTATE Update(Vec2f pos);
+	void Update(Vec2f pos);
 	void Render();
 	void drawDebug();
 	
 	TextWidget *GetTouch(bool keyTouched, int keyId, InputKeyId* pInputKeyId, bool _bValidateTest);
 	void ReInitActionKey();
-	MENUSTATE checkShortcuts();
 	
 	Vec2f m_pos;
 	Vec2f m_oldPos;
 	int m_rowSpacing;
-	SavegameHandle m_savegame;
 	MENUSTATE eMenuState;
 	WidgetContainer m_children;
 	
 protected:
 	Rectf m_rect;
 	Vec2f m_size;
+	Widget * m_selected;
+	bool bMouseAttack;
 	
 private:
 	void updateTextRect(TextWidget * widget);
 	void UpdateText();
-
-	Widget * m_selected;
+	
 	bool bEdit;
-	bool bMouseAttack;
 	bool m_disableShortcuts;
 	PlatformDuration m_blinkTime;
 	bool m_blink;
 };
 
-class CWindowMenu : private boost::noncopyable {
+class LoadMenuPage;
+class SaveConfirmMenuPage;
+
+class MenuWindow : private boost::noncopyable {
 	
 private:
+	
 	Vec2f m_pos;
 	Vec2f m_size;
-	float				fPosXCalc;
-	float				fDist;
+	float m_initalOffsetX;
+	float m_fadeDistance;
 	
 public:
-	CWindowMenu(const Vec2f & pos, const Vec2f & size);
-	virtual ~CWindowMenu();
+	
+	MenuWindow();
+	virtual ~MenuWindow();
 	
 	void add(MenuPage * page);
-	void Update(PlatformDuration time);
-	MENUSTATE Render();
+	void Update();
+	void Render();
 	
-	std::vector<MenuPage *>	m_pages;
-	float				fAngle;
-	MENUSTATE			m_currentPageId;
+	std::vector<MenuPage *> m_pages;
+	LoadMenuPage * m_pageLoad;
+	SaveConfirmMenuPage * m_pageSaveConfirm;
+	
+	float fAngle;
+	
+	MENUSTATE currentPageId() {
+		return m_currentPageId;
+	}
+	
+	void setCurrentPageId(MENUSTATE id);
+	
+	void requestPage(MENUSTATE page) {
+		m_requestedPage = page;
+	}
 	
 private:
+	
+	MENUSTATE m_requestedPage;
+	MENUSTATE m_currentPageId;
+	MenuPage * m_currentPage;
+	
 	TextureContainer * m_background;
 	TextureContainer * m_border;
+	
 };
 
 void MenuReInitAll();
 
-void Menu2_Open();
-bool Menu2_Render();
+void MainMenuDoFrame();
 void Menu2_Close();
 
 
 
 void ARX_MENU_Clicked_QUIT();
 
-bool ARX_QuickLoad();
+void ARX_QuickLoad();
 void ARX_QuickSave();
-bool ARX_SlotLoad(SavegameHandle slotIndex);
+void ARX_SlotLoad(SavegameHandle slotIndex);
 
 bool MENU_NoActiveWindow();
+
+extern bool bNoMenu;
 
 #endif // ARX_GUI_MENUWIDGETS_H

@@ -55,31 +55,28 @@ const std::string
 	audioDevice = "auto",
 	windowSize = BOOST_PP_STRINGIZE(ARX_DEFAULT_WIDTH) "x"
 	             BOOST_PP_STRINGIZE(ARX_DEFAULT_HEIGHT),
-	debugLevels = "",
-	bufferUpload = "",
+	debugLevels,
+	bufferUpload,
 	
 	thumbnailSize = BOOST_PP_STRINGIZE(THUMBNAIL_DEFAULT_WIDTH) "x"
-					BOOST_PP_STRINGIZE(THUMBNAIL_DEFAULT_HEIGHT);
+	                BOOST_PP_STRINGIZE(THUMBNAIL_DEFAULT_HEIGHT);
 
 const int
 	levelOfDetail = 2,
-	fogDistance = 10,
 	vsync = -1,
 	fpsLimit = 240,
 	maxAnisotropicFiltering = 9001,
 	alphaCutoutAntialiasing = 2,
 	cinematicWidescreenMode = CinematicFadeEdges,
 	hudScaleFilter = UIFilterBilinear,
-	volume = 10,
-	sfxVolume = 10,
-	speechVolume = 10,
-	ambianceVolume = 10,
 	hrtf = audio::HRTFDefault,
+	autoReadyWeapon = AutoReadyWeaponNearEnemies,
 	mouseSensitivity = 6,
 	mouseAcceleration = 0,
 	migration = Config::OriginalAssets,
 	quicksaveSlots = 3,
-	bufferSize = 0;
+	bufferSize = 0,
+	quickLevelTransition = JumpToChangeLevel;
 
 const bool
 	fullscreen = true,
@@ -93,13 +90,12 @@ const bool
 	eax = true,
 	muteOnFocusLost = false,
 	invertMouse = false,
-	autoReadyWeapon = false,
 	mouseLookToggle = true,
 	autoDescription = true,
 	forceToggle = false,
 	rawMouseInput = true,
 	borderTurning = true,
-	useAltRuneRecognition = false;
+	useAltRuneRecognition = true;
 
 #ifdef ARX_DEBUG
 const bool allowConsole = true;
@@ -108,7 +104,13 @@ const bool allowConsole = false;
 #endif
 
 const float
-	hudScale = 0.5f;
+	fogDistance = 10.f,
+	gamma = 5.f,
+	hudScale = 0.5f,
+	volume = 10.f,
+	sfxVolume = 10.f,
+	speechVolume = 10.f,
+	ambianceVolume = 10.f;
 
 const ActionKey actions[NUM_ACTION_KEY] = {
 	ActionKey(Keyboard::Key_Spacebar), // JUMP
@@ -183,6 +185,7 @@ const std::string
 	fullscreen = "full_screen",
 	levelOfDetail = "others_details",
 	fogDistance = "fog",
+	gamma = "gamma",
 	antialiasing = "antialiasing",
 	vsync = "vsync",
 	fpsLimit = "fps_limit",
@@ -230,7 +233,8 @@ const std::string
 	rawMouseInput = "raw_mouse_input",
 	autoDescription = "auto_description",
 	borderTurning = "border_turning",
-	useAltRuneRecognition = "use_alt_rune_recognition",
+	useAltRuneRecognition = "improved_rune_recognition",
+	quickLevelTransition = "quick_level_transition",
 	allowConsole = "allow_console";
 
 // Input key options
@@ -408,6 +412,7 @@ bool Config::save() {
 	writer.writeKey(Key::fullscreen, video.fullscreen);
 	writer.writeKey(Key::levelOfDetail, video.levelOfDetail);
 	writer.writeKey(Key::fogDistance, video.fogDistance);
+	writer.writeKey(Key::gamma, video.gamma);
 	writer.writeKey(Key::antialiasing, video.antialiasing);
 	writer.writeKey(Key::vsync, video.vsync);
 	writer.writeKey(Key::fpsLimit, video.fpsLimit);
@@ -452,7 +457,7 @@ bool Config::save() {
 	// input
 	writer.beginSection(Section::Input);
 	writer.writeKey(Key::invertMouse, input.invertMouse);
-	writer.writeKey(Key::autoReadyWeapon, input.autoReadyWeapon);
+	writer.writeKey(Key::autoReadyWeapon, int(input.autoReadyWeapon));
 	writer.writeKey(Key::mouseLookToggle, input.mouseLookToggle);
 	writer.writeKey(Key::mouseSensitivity, input.mouseSensitivity);
 	writer.writeKey(Key::mouseAcceleration, input.mouseAcceleration);
@@ -460,6 +465,7 @@ bool Config::save() {
 	writer.writeKey(Key::autoDescription, input.autoDescription);
 	writer.writeKey(Key::borderTurning, input.borderTurning);
 	writer.writeKey(Key::useAltRuneRecognition, input.useAltRuneRecognition);
+	writer.writeKey(Key::quickLevelTransition, int(input.quickLevelTransition));
 	if(input.allowConsole) {
 		// Only write this if true so that switching from release to debug builds enables the console
 		writer.writeKey(Key::allowConsole, input.allowConsole);
@@ -540,7 +546,8 @@ bool Config::init(const fs::path & file) {
 	}
 	video.fullscreen = reader.getKey(Section::Video, Key::fullscreen, Default::fullscreen);
 	video.levelOfDetail = reader.getKey(Section::Video, Key::levelOfDetail, Default::levelOfDetail);
-	video.fogDistance = reader.getKey(Section::Video, Key::fogDistance, Default::fogDistance);;
+	video.fogDistance = reader.getKey(Section::Video, Key::fogDistance, Default::fogDistance);
+	video.gamma = reader.getKey(Section::Video, Key::gamma, Default::gamma);
 	video.antialiasing = reader.getKey(Section::Video, Key::antialiasing, Default::antialiasing);
 	int vsync = reader.getKey(Section::Video, Key::vsync, Default::vsync);
 	video.vsync = glm::clamp(vsync, -1, 1);
@@ -589,7 +596,8 @@ bool Config::init(const fs::path & file) {
 	
 	// Get input settings
 	input.invertMouse = reader.getKey(Section::Input, Key::invertMouse, Default::invertMouse);
-	input.autoReadyWeapon = reader.getKey(Section::Input, Key::autoReadyWeapon, Default::autoReadyWeapon);
+	int autoReadyWeapon = reader.getKey(Section::Input, Key::autoReadyWeapon, Default::autoReadyWeapon);
+	input.autoReadyWeapon = AutoReadyWeapon(glm::clamp(autoReadyWeapon, 0, 2));
 	input.mouseLookToggle = reader.getKey(Section::Input, Key::mouseLookToggle, Default::mouseLookToggle);
 	input.mouseSensitivity = reader.getKey(Section::Input, Key::mouseSensitivity, Default::mouseSensitivity);
 	input.mouseAcceleration = reader.getKey(Section::Input, Key::mouseAcceleration, Default::mouseAcceleration);
@@ -597,6 +605,8 @@ bool Config::init(const fs::path & file) {
 	input.autoDescription = reader.getKey(Section::Input, Key::autoDescription, Default::autoDescription);
 	input.borderTurning = reader.getKey(Section::Input, Key::borderTurning, Default::borderTurning);
 	input.useAltRuneRecognition = reader.getKey(Section::Input, Key::useAltRuneRecognition, Default::useAltRuneRecognition);
+	int quickLevelTransition = reader.getKey(Section::Input, Key::quickLevelTransition, Default::quickLevelTransition);
+	input.quickLevelTransition = QuickLevelTransition(glm::clamp(quickLevelTransition, 0, 2));
 	input.allowConsole = reader.getKey(Section::Input, Key::allowConsole, Default::allowConsole);
 	
 	// Get action key settings

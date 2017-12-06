@@ -23,7 +23,7 @@
 #include <boost/intrusive/list.hpp>
 
 #include "graphics/Renderer.h"
-#include "graphics/opengl/GLTexture2D.h"
+#include "graphics/opengl/GLTexture.h"
 #include "graphics/opengl/OpenGLUtil.h"
 #include "math/Rectangle.h"
 
@@ -53,7 +53,7 @@ public:
 	void reloadColorKeyTextures();
 	
 	// Factory
-	Texture2D * CreateTexture2D();
+	Texture * createTexture();
 	
 	// Viewport
 	void SetViewport(const Rect & viewport);
@@ -76,6 +76,8 @@ public:
 	float getMaxSupportedAnisotropy() const { return m_maximumSupportedAnisotropy; }
 	void setMaxAnisotropy(float value);
 	
+	AlphaCutoutAntialising getMaxSupportedAlphaCutoutAntialiasing() const;
+	
 	VertexBuffer<TexturedVertex> * createVertexBufferTL(size_t capacity, BufferUsage usage);
 	VertexBuffer<SMY_VERTEX> * createVertexBuffer(size_t capacity, BufferUsage usage);
 	VertexBuffer<SMY_VERTEX3> * createVertexBuffer3(size_t capacity, BufferUsage usage);
@@ -85,7 +87,7 @@ public:
 	bool getSnapshot(Image & image);
 	bool getSnapshot(Image & image, size_t width, size_t height);
 	
-	GLTextureStage * GetTextureStage(unsigned int textureStage) {
+	GLTextureStage * GetTextureStage(size_t textureStage) {
 		return reinterpret_cast<GLTextureStage *>(Renderer::GetTextureStage(textureStage));
 	}
 	
@@ -105,6 +107,7 @@ public:
 	bool hasDrawElementsBaseVertex() const { return m_hasDrawElementsBaseVertex; }
 	bool hasClearDepthf() const { return m_hasClearDepthf; }
 	bool hasVertexFogCoordinate() const { return m_hasVertexFogCoordinate; }
+	bool hasSampleShading() const { return m_hasSampleShading; }
 	
 private:
 	
@@ -128,7 +131,7 @@ private:
 	float m_maximumAnisotropy;
 	float m_maximumSupportedAnisotropy;
 	
-	typedef boost::intrusive::list<GLTexture2D, boost::intrusive::constant_time_size<false> > TextureList;
+	typedef boost::intrusive::list<GLTexture, boost::intrusive::constant_time_size<false> > TextureList;
 	TextureList textures;
 	
 	RenderState m_glstate;
@@ -153,6 +156,7 @@ private:
 	bool m_hasDrawElementsBaseVertex;
 	bool m_hasClearDepthf;
 	bool m_hasVertexFogCoordinate;
+	bool m_hasSampleShading;
 	
 };
 

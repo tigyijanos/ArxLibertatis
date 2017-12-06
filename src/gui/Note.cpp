@@ -27,6 +27,7 @@
 #include "graphics/Renderer.h"
 #include "graphics/data/TextureContainer.h"
 #include "graphics/texture/TextureStage.h"
+#include "gui/Cursor.h"
 #include "gui/Interface.h"
 #include "gui/Text.h"
 #include "input/Input.h"
@@ -67,7 +68,7 @@ void Note::deallocate() {
 bool Note::allocate() {
 	
 	if(allocatedForRatio == g_sizeRatio) {
-		return background ? true : false;
+		return background != NULL;
 	}
 	
 	deallocate();
@@ -297,7 +298,7 @@ void Note::render() {
 bool Note::manageActions() {
 
 	if(prevPageButton().contains(Vec2f(DANAEMouse))) {
-		SpecialCursor = CURSOR_INTERACTION_ON;
+		cursorSetInteraction();
 		if(eeMouseUp1()) {
 			ARX_SOUND_PlayInterface(SND_BOOK_PAGE_TURN, Random::getf(0.9f, 1.1f));
 			arx_assert(page() >= 2);
@@ -305,7 +306,7 @@ bool Note::manageActions() {
 		}
 
 	} else if(nextPageButton().contains(Vec2f(DANAEMouse))) {
-		SpecialCursor = CURSOR_INTERACTION_ON;
+		cursorSetInteraction();
 		if(eeMouseUp1()) {
 			ARX_SOUND_PlayInterface(SND_BOOK_PAGE_TURN, Random::getf(0.9f, 1.1f));
 			setPage(page() + 2);
