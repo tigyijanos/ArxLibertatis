@@ -34,8 +34,12 @@ addons:
       description: "ArxLibertatis coverity scan"
     notification_email: fabianroth64@googlemail.com
     build_command_prepend: "mkdir build && cd build && cmake --version && cmake .. -DICON_TYPE=none -DUNITY_BUILD=false"
-    build_command: "make -j1 ; ls -la cov-int ; cat cov-int/scm_log.txt"
+    build_command: "make -j1"
     branch_pattern: coverity_scan
+script:
+  - cd build
+  - ls -la cov-int
+  - cat cov-int/scm_log.txt
 branches:
   only:
     - master
