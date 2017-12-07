@@ -4,8 +4,6 @@ matrix:
     - os: linux
       sudo: required
       compiler: gcc
-    - os: osx
-      compiler: clang
 env:
   global:
    # The next declration is the encrypted COVERITY_SCAN_TOKEN, created
@@ -33,13 +31,9 @@ addons:
       name: "arx/ArxLibertatis"
       description: "ArxLibertatis coverity scan"
     notification_email: fabianroth64@googlemail.com
-    build_command_prepend: "mkdir build && cd build && cmake --version && cmake .. -DICON_TYPE=none"
+    build_command_prepend: "mkdir build && cd build && cmake --version && cmake .. -DICON_TYPE=none -DUNITY_BUILD=false"
     build_command: "make -j1"
     branch_pattern: coverity_scan
-before_install:
-  - if [ "$TRAVIS_OS_NAME" = osx ] ; then brew update ; fi
-  - if [ "$TRAVIS_OS_NAME" = osx ] ; then brew upgrade cmake boost ; fi
-  - if [ "$TRAVIS_OS_NAME" = osx ] ; then brew install zlib freetype sdl2 glew qt5 cppunit glm ; fi
 script:
   - if [[ ${COVERITY_SCAN_BRANCH} != 1 ]] ; then mkdir build ; fi
   - if [[ ${COVERITY_SCAN_BRANCH} != 1 ]] ; then cd build ; fi
