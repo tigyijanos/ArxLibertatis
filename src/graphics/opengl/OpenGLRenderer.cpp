@@ -467,7 +467,12 @@ void OpenGLRenderer::enableTransform() {
 	glLoadMatrixf(glm::value_ptr(view));
 		
 	glMatrixMode(GL_PROJECTION);
-	glLoadMatrixf(glm::value_ptr(projection));
+	// For OpenGL +y in screen-space is up
+	glm::mat4 flip_y = glm::mat4x4(1, 0, 0, 0,
+	                               0,-1, 0, 0,
+	                               0, 0, 1, 0,
+	                               0, 0, 0, 1);
+	glLoadMatrixf(glm::value_ptr(flip_y * projection));
 	
 	if(hasVertexFogCoordinate()) {
 		glFogi(GL_FOG_COORDINATE_SOURCE, GL_FRAGMENT_DEPTH);
