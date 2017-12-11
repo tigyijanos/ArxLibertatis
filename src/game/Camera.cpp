@@ -66,6 +66,8 @@ static void EERIE_CreateMatriceProj(float width, float height, EERIE_CAMERA * ca
 	cam->ProjectionMatrix[0][0] *= width * .5f;
 	cam->ProjectionMatrix[1][1] *= -height * .5f;
 	
+	cam->ProjectionMatrix = glm::translate(glm::mat4(1), Vec3f(cam->orgTrans.mod, 0.f)) * cam->ProjectionMatrix;
+	
 	GRenderer->SetViewport(Rect(static_cast<s32>(width), static_cast<s32>(height)));
 }
 
